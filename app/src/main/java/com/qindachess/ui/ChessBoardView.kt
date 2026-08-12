@@ -149,25 +149,23 @@ class ChessBoardView @JvmOverloads constructor(
     }
 
     private fun calculateDimensions() {
-        val paddingDp = 2f
         val density = resources.displayMetrics.density
-        val pad = paddingDp * density
 
-        // 估算 pieceRadius 用于计算可用区域（占 cellSize 的 0.42）
-        val tempCell = (width.toFloat() - 2 * pad) / 8f
-        val reserveY = tempCell * 0.42f + 4f * density   // 上下各留 pieceRadius + 4dp 余量
-
-        val availWidth = (width.toFloat() - paddingLeft - paddingRight - pad * 2f).coerceAtLeast(1f)
-        val availHeight = (height.toFloat() - paddingTop - paddingBottom - pad * 2f - reserveY * 2f).coerceAtLeast(1f)
+        // 棋盘完全填满 View 区域，不留任何内部 padding（细黑边由父 FrameLayout 的 2dp padding 提供）
+        // 棋子中心点位于 row=0 / row=9 的格线上 → 棋子圆自然贴到 View 边缘（与目标样式一致）
+        val availWidth = (width.toFloat() - paddingLeft - paddingRight).coerceAtLeast(1f)
+        val availHeight = (height.toFloat() - paddingTop - paddingBottom).coerceAtLeast(1f)
 
         // 中国象棋棋盘 9 列 × 10 行：8 个水平间隔，9 个垂直间隔 → 宽高比 = 8 / 9
         val ratioBoard = 8f / 9f
         val ratioSpace = availWidth / availHeight
 
         if (ratioSpace > ratioBoard) {
+            // 容器比棋盘更宽 → 以高度为基准，水平居中
             boardHeight = availHeight
             boardWidth = boardHeight * ratioBoard
         } else {
+            // 容器比棋盘更高（或正好）→ 以宽度为基准，垂直居中
             boardWidth = availWidth
             boardHeight = boardWidth / ratioBoard
         }
@@ -175,9 +173,9 @@ class ChessBoardView @JvmOverloads constructor(
         cellSize = boardWidth / 8f
         pieceRadius = cellSize * 0.42f
 
-        // 把棋盘放在可用区域 + 上下各 reserveY 余量的中部
-        originX = paddingLeft + pad + (availWidth - boardWidth) / 2f
-        originY = paddingTop + pad + reserveY + (availHeight - boardHeight) / 2f
+        // 棋盘在 View 内水平/垂直居中（不再上下各加 pieceRadius 余量）
+        originX = paddingLeft + (availWidth - boardWidth) / 2f
+        originY = paddingTop + (availHeight - boardHeight) / 2f
 
         textPaint.textSize = cellSize * 0.25f
         redPiecePaint.textSize = pieceRadius * 1.1f
