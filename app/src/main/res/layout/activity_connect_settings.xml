@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FAFAFA">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- 顶部标题栏 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="#1976D2"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_step_prev"
+                android:tint="#FFFFFF"
+                android:contentDescription="返回"
+                android:scaleType="centerInside"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="连线设置"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
+        <!-- 状态 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="16dp"
+            android:layout_marginTop="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="当前状态"
+                android:textSize="14sp"
+                android:textColor="#888888"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/textStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="未启动"
+                android:textSize="16sp"
+                android:textColor="#333333"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp">
+
+                <Button
+                    android:id="@+id/btnStartService"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="启动悬浮窗"/>
+
+                <Button
+                    android:id="@+id/btnStopService"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="停止悬浮窗"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 出招延时 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="16dp"
+            android:layout_marginTop="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="出招延时"
+                android:textSize="14sp"
+                android:textColor="#888888"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/textDelayValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="0.5s"
+                android:textSize="16sp"
+                android:textColor="#1976D2"/>
+
+            <SeekBar
+                android:id="@+id/seekDelay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:max="79"
+                android:progress="4"/>
+        </LinearLayout>
+
+        <!-- 思考层数 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="16dp"
+            android:layout_marginTop="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="思考层数"
+                android:textSize="14sp"
+                android:textColor="#888888"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/textDepthValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="12 层"
+                android:textSize="16sp"
+                android:textColor="#1976D2"/>
+
+            <SeekBar
+                android:id="@+id/seekDepth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:max="42"
+                android:progress="4"/>
+        </LinearLayout>
+
+        <!-- 模式开关 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="16dp"
+            android:layout_marginTop="8dp">
+
+            <CheckBox
+                android:id="@+id/checkAutoMode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="自动下棋模式（关闭后为手动：等用户点估值再走）"
+                android:textSize="15sp"
+                android:textColor="#333333"/>
+
+            <CheckBox
+                android:id="@+id/checkShowMiniBoard"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="默认显示小棋盘"
+                android:textSize="15sp"
+                android:textColor="#333333"/>
+        </LinearLayout>
+
+        <!-- 操作 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="手势注入通道"
+                android:textSize="14sp"
+                android:textColor="#888888"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="应用会同时启用两种通道以保证稳定性：\n1) ADB Shell input swipe（推荐、稳定、鸿蒙全版本通用）\n2) 无障碍服务（fallback，模拟手势）"
+                android:textSize="13sp"
+                android:textColor="#666666"
+                android:lineSpacingExtra="2dp"/>
+
+            <Button
+                android:id="@+id/btnAccessibility"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="去开启无障碍服务"/>
+
+            <Button
+                android:id="@+id/btnOverlay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="去授权悬浮窗权限"/>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

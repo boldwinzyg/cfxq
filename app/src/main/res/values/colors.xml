@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_color">#FAFAFA</color>
+    <color name="board_bg">#E8D5B5</color>
+    <color name="board_line">#6B5344</color>
+    <color name="red_piece">#D32F2F</color>
+    <color name="black_piece">#2C1810</color>
+    <color name="red_text">#C62828</color>
+    <color name="dark_text">#212121</color>
+    <color name="engine_text">#1976D2</color>
+    <color name="score_text">#388E3C</color>
+    <color name="info_text">#757575</color>
+    <color name="divider">#E0E0E0</color>
+    <color name="floating_bg">#CCE3F2FD</color>
+
+    <color name="primary">#5D4037</color>
+    <color name="primary_dark">#4E342E</color>
+    <color name="primary_light">#8D6E63</color>
+    <color name="accent">#FF5722</color>
+    <color name="white">#FFFFFF</color>
+
+    <color name="topbar_bg_transparent">#80FFFFFF</color>
+    <color name="status_text_dark">#333333</color>
+    <color name="eval_positive">#2E7D32</color>
+    <color name="eval_negative">#C62828</color>
+    <color name="score_green">#4CAF50</color>
+    <color name="tab_selected_text">#333333</color>
+    <color name="tab_unselected_text">#888888</color>
+    <color name="move_text">#212121</color>
+    <color name="move_score">#2E7D32</color>
+    <color name="move_winrate">#333333</color>
+    <color name="move_stats">#616161</color>
+    <color name="move_note">#616161</color>
+    <color name="table_header_bg">#F0F0F0</color>
+    <color name="table_header_text">#555555</color>
+    <color name="cloud_engine">#999999</color>
+</resources>

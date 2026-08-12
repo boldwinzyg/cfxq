@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="26dp" android:height="26dp" android:viewportWidth="24" android:viewportHeight="24">
+    <!-- 显示器 -->
+    <path android:strokeColor="#333333" android:strokeWidth="1.6" android:fillColor="#00000000"
+        android:pathData="M3,4h18v13H3zM8,21h8M12,17v4"/>
+    <!-- 红色"帅"字标记 -->
+    <path android:fillColor="#D32F2F"
+        android:pathData="M12,8 L8,13 L10,13 L10,16 L14,16 L14,13 L16,13 Z"/>
+</vector>

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF">
+
+    <!-- 1. Top section: mini chess board -->
+    <FrameLayout
+        android:id="@+id/notationBoardContainer"
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:padding="8dp"
+        android:gravity="center">
+
+        <com.qindachess.ui.ChessBoardView
+            android:id="@+id/notationBoardView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </FrameLayout>
+
+    <!-- 2. Move info bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/notationStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="当前: 请走棋"
+            android:textSize="14sp"
+            android:textColor="#37474F" />
+
+        <ImageButton
+            android:id="@+id/notationUndo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@android:drawable/ic_media_previous"
+            android:contentDescription="悔棋"
+            android:padding="8dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless" />
+
+        <ImageButton
+            android:id="@+id/notationRedo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@android:drawable/ic_media_next"
+            android:contentDescription="下一步"
+            android:padding="8dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless" />
+    </LinearLayout>
+
+    <!-- 3. Annotations edit area (hidden by default) -->
+    <LinearLayout
+        android:id="@+id/notationAnnotateBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="4dp"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <EditText
+            android:id="@+id/notationAnnotationInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="输入注释..."
+            android:inputType="text" />
+
+        <Button
+            android:id="@+id/notationAnnotateSave"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="保存"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <!-- 4. Move tree scroll area -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:id="@+id/notationMoveTree"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp" />
+    </ScrollView>
+
+    <!-- 5. Bottom action bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:background="#ECEFF1"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/notationSave"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:text="保存到收藏"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/notationNewGame"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:text="新谱"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/notationDeleteNode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:text="删除分支"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/notationAnnotateBtn"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:text="添加注释"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+</LinearLayout>

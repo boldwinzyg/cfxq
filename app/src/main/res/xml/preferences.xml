@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:title="引擎设置">
+
+        <SwitchPreferenceCompat
+            app:key="use_engine"
+            app:title="启用引擎"
+            app:summary="使用本地UCI引擎进行分析"
+            app:defaultValue="true" />
+
+        <Preference
+            app:key="engine_path"
+            app:title="引擎路径"
+            app:summary="指定引擎可执行文件路径"
+            app:defaultValue="" />
+
+        <Preference
+            app:key="nnue_path"
+            app:title="NNUE权重路径"
+            app:summary="指定NNUE神经网络权重文件"
+            app:defaultValue="" />
+
+        <SeekBarPreference
+            app:key="search_depth"
+            app:title="搜索深度"
+            app:summary="引擎搜索最大深度"
+            app:defaultValue="12"
+            app:seekBarIncrement="1" />
+
+        <SeekBarPreference
+            app:key="search_time_ms"
+            app:title="搜索时间(毫秒)"
+            app:summary="每次搜索的时间限制"
+            app:defaultValue="3000"
+            app:seekBarIncrement="500" />
+
+        <SeekBarPreference
+            app:key="thread_count"
+            app:title="引擎线程数"
+            app:summary="引擎使用的CPU线程数"
+            app:defaultValue="2"
+            app:seekBarIncrement="1" />
+
+        <SeekBarPreference
+            app:key="hash_size_mb"
+            app:title="哈希表大小(MB)"
+            app:summary="引擎哈希表内存大小"
+            app:defaultValue="256"
+            app:seekBarIncrement="64" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="开局库设置">
+
+        <SwitchPreferenceCompat
+            app:key="use_opening_book"
+            app:title="启用开局库"
+            app:summary="对局开局阶段使用PolyGlot开局库"
+            app:defaultValue="true" />
+
+        <SwitchPreferenceCompat
+            app:key="book_randomize"
+            app:title="开局库随机化"
+            app:summary="从多个库着中按权重随机选择"
+            app:defaultValue="true" />
+
+        <Preference
+            app:key="book_path"
+            app:title="开局库路径"
+            app:summary="指定PolyGlot格式开局库文件"
+            app:defaultValue="" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="棋盘设置">
+
+        <SwitchPreferenceCompat
+            app:key="show_coordinates"
+            app:title="显示坐标"
+            app:summary="在棋盘边缘显示坐标"
+            app:defaultValue="true" />
+
+        <SwitchPreferenceCompat
+            app:key="flip_board_by_default"
+            app:title="默认翻转棋盘"
+            app:summary="黑方视角"
+            app:defaultValue="false" />
+
+        <ListPreference
+            app:key="theme"
+            app:title="棋盘主题"
+            app:summary="选择棋盘配色方案"
+            app:entries="@array/theme_entries"
+            app:entryValues="@array/theme_values"
+            app:defaultValue="default" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="自动下棋设置">
+
+        <SwitchPreferenceCompat
+            app:key="use_accessibility"
+            app:title="启用无障碍服务"
+            app:summary="用于控制其他象棋软件"
+            app:defaultValue="false" />
+
+        <ListPreference
+            app:key="target_app"
+            app:title="目标应用"
+            app:summary="选择要自动下棋的目标应用"
+            app:entries="@array/target_app_entries"
+            app:entryValues="@array/target_app_values"
+            app:defaultValue="general" />
+
+        <SeekBarPreference
+            app:key="auto_move_delay"
+            app:title="自动走棋延迟(毫秒)"
+            app:summary="自动执行走棋的延迟时间"
+            app:defaultValue="500"
+            app:seekBarIncrement="100" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="图片识别设置">
+
+        <SwitchPreferenceCompat
+            app:key="auto_detect_board"
+            app:title="自动检测棋盘"
+            app:summary="启用自动棋盘检测和棋子识别"
+            app:defaultValue="true" />
+
+        <SeekBarPreference
+            app:key="recognition_confidence"
+            app:title="识别置信度阈值"
+            app:summary="低于此阈值的格子视为空"
+            app:defaultValue="50"
+            app:seekBarIncrement="5" />
+
+    </PreferenceCategory>
+
+</androidx.preference.PreferenceScreen>

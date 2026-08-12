@@ -1,0 +1,4 @@
+-keep class com.qindachess.** { *; }
+-keep class org.opencv.** { *; }
+-dontwarn org.opencv.**
+-keepclassmembers class * extends android.accessibilityservice.AccessibilityService { *; }

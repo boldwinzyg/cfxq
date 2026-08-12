@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="theme_entries">
+        <item>默认（木色）</item>
+        <item>深色</item>
+        <item>极简</item>
+    </string-array>
+    <string-array name="theme_values">
+        <item>default</item>
+        <item>dark</item>
+        <item>minimal</item>
+    </string-array>
+
+    <string-array name="target_app_entries">
+        <item>通用（自动检测）</item>
+        <item>JJ象棋</item>
+        <item>乐亚象棋</item>
+        <item>天天象棋</item>
+    </string-array>
+    <string-array name="target_app_values">
+        <item>general</item>
+        <item>com.jj.chess</item>
+        <item>com.leya.xiangqi</item>
+        <item>com.tencent.chess</item>
+    </string-array>
+</resources>

@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_floating_panel"
+    android:padding="8dp">
+
+    <!-- 第一行：按钮 + 分数 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView android:id="@+id/btnConnect"
+            android:layout_width="34dp" android:layout_height="34dp"
+            android:padding="6dp"
+            android:background="@drawable/bg_floating_btn"
+            android:src="@drawable/ic_bottom_link"
+            android:contentDescription="连线"
+            android:scaleType="centerInside"/>
+
+        <ImageView android:id="@+id/btnAuto"
+            android:layout_width="34dp" android:layout_height="34dp"
+            android:padding="6dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/bg_floating_btn"
+            android:src="@drawable/ic_step_play"
+            android:contentDescription="自动/手动"
+            android:scaleType="centerInside"/>
+
+        <!-- 分数文本：独立背景，等宽字体 -->
+        <TextView android:id="@+id/tvScoreText"
+            android:layout_width="wrap_content"
+            android:layout_height="30dp"
+            android:layout_marginHorizontal="4dp"
+            android:gravity="center"
+            android:background="@drawable/bg_floating_score"
+            android:textColor="#FFF176"
+            android:textSize="14sp"
+            android:fontFamily="monospace"
+            android:minWidth="62dp"
+            android:paddingHorizontal="6dp"
+            android:text="—"
+            android:singleLine="true"/>
+
+        <ImageView android:id="@+id/btnDelay"
+            android:layout_width="34dp" android:layout_height="34dp"
+            android:padding="6dp"
+            android:background="@drawable/bg_floating_btn"
+            android:src="@drawable/ic_step_next"
+            android:contentDescription="延时"
+            android:scaleType="centerInside"/>
+
+        <ImageView android:id="@+id/btnDepth"
+            android:layout_width="34dp" android:layout_height="34dp"
+            android:padding="6dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/bg_floating_btn"
+            android:src="@drawable/ic_grid"
+            android:contentDescription="层数"
+            android:scaleType="centerInside"/>
+
+        <ImageView android:id="@+id/btnMiniBoard"
+            android:layout_width="34dp" android:layout_height="34dp"
+            android:padding="6dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/bg_floating_btn"
+            android:src="@drawable/ic_eye"
+            android:contentDescription="小棋盘"
+            android:scaleType="centerInside"/>
+
+        <ImageView android:id="@+id/btnStop"
+            android:layout_width="34dp" android:layout_height="34dp"
+            android:padding="6dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/bg_floating_btn"
+            android:src="@drawable/ic_close_dark"
+            android:contentDescription="终止关闭"
+            android:scaleType="centerInside"/>
+    </LinearLayout>
+
+    <!-- 第二行：分析数据（带分隔线） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="5dp"
+        android:paddingTop="4dp"
+        android:background="@drawable/bg_floating_score">
+
+        <LinearLayout
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="评分" android:textColor="#88FFFFFF" android:textSize="8sp"/>
+            <TextView android:id="@+id/tvEval"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textColor="#FFFFFF" android:textSize="12sp"
+                android:fontFamily="monospace" android:text="—"/>
+        </LinearLayout>
+
+        <View android:layout_width="0.5dp" android:layout_height="16dp"
+            android:background="#33FFFFFF"/>
+
+        <LinearLayout
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="深度" android:textColor="#88FFFFFF" android:textSize="8sp"/>
+            <TextView android:id="@+id/tvDepth"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textColor="#FFFFFF" android:textSize="12sp"
+                android:fontFamily="monospace" android:text="d—"/>
+        </LinearLayout>
+
+        <View android:layout_width="0.5dp" android:layout_height="16dp"
+            android:background="#33FFFFFF"/>
+
+        <LinearLayout
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="用时" android:textColor="#88FFFFFF" android:textSize="8sp"/>
+            <TextView android:id="@+id/tvTime"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textColor="#FFFFFF" android:textSize="12sp"
+                android:fontFamily="monospace" android:text="—"/>
+        </LinearLayout>
+
+        <View android:layout_width="0.5dp" android:layout_height="16dp"
+            android:background="#33FFFFFF"/>
+
+        <LinearLayout
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1.5"
+            android:gravity="center"
+            android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="招法" android:textColor="#88FFFFFF" android:textSize="8sp"/>
+            <TextView android:id="@+id/tvPv"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textColor="#B0E0E6" android:textSize="12sp"
+                android:fontFamily="monospace" android:text="—"
+                android:singleLine="true" android:ellipsize="end"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

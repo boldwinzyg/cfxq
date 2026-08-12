@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">宸风象棋</string>
+    <string name="engine_loading">引擎加载中...</string>
+    <string name="engine_ready">引擎就绪</string>
+    <string name="engine_error">引擎错误</string>
+    <string name="new_game">新对局</string>
+    <string name="undo">悔棋</string>
+    <string name="flip">翻转棋盘</string>
+    <string name="analysis">自动分析</string>
+    <string name="auto_play">连线自动下棋</string>
+    <string name="settings">设置</string>
+    <string name="turn_red">当前回合: 红方</string>
+    <string name="turn_black">当前回合: 黑方</string>
+    <string name="win_red">红方获胜！</string>
+    <string name="win_black">黑方获胜！</string>
+    <string name="prompt_theme">界面主题</string>
+    <string name="prompt_board_skin">棋盘皮肤</string>
+    <string name="prompt_piece_style">棋子样式</string>
+</resources>

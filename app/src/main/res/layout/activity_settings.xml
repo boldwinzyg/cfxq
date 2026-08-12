@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:paddingBottom="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="界面外观"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/engine_text" />
+
+        <Spinner
+            android:id="@+id/spinnerTheme"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:prompt="@string/prompt_theme"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="棋盘皮肤"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/dark_text" />
+
+        <Spinner
+            android:id="@+id/spinnerBoardSkin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:prompt="@string/prompt_board_skin"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="棋子样式"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/dark_text" />
+
+        <Spinner
+            android:id="@+id/spinnerPieceStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:prompt="@string/prompt_piece_style"
+            android:layout_marginTop="4dp" />
+
+        <CheckBox
+            android:id="@+id/checkShowCoordinates"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="显示棋盘坐标"
+            android:textSize="14sp"
+            android:layout_marginTop="8dp" />
+
+        <CheckBox
+            android:id="@+id/checkFlipDefault"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="默认翻转棋盘（黑方视角）"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/divider"
+            android:layout_marginVertical="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="引擎设置"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="@color/engine_text" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="思考深度"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/dark_text" />
+
+        <SeekBar
+            android:id="@+id/seekDepth"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="25"
+            android:progress="12" />
+
+        <TextView
+            android:id="@+id/textDepthValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="深度: 12"
+            android:textSize="12sp"
+            android:textColor="@color/info_text" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="思考时间（毫秒）"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/dark_text" />
+
+        <SeekBar
+            android:id="@+id/seekTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="30"
+            android:progress="6" />
+
+        <TextView
+            android:id="@+id/textTimeValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="时间: 3000ms"
+            android:textSize="12sp"
+            android:textColor="@color/info_text" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="线程数"
+                    android:textSize="14sp"
+                    android:textColor="@color/dark_text" />
+
+                <SeekBar
+                    android:id="@+id/seekThreads"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="8"
+                    android:progress="2" />
+
+                <TextView
+                    android:id="@+id/textThreadsValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2 线程"
+                    android:textSize="12sp"
+                    android:textColor="@color/info_text" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="哈希表(MB)"
+                    android:textSize="14sp"
+                    android:textColor="@color/dark_text" />
+
+                <SeekBar
+                    android:id="@+id/seekHash"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="15"
+                    android:progress="3" />
+
+                <TextView
+                    android:id="@+id/textHashValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="256 MB"
+                    android:textSize="12sp"
+                    android:textColor="@color/info_text" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="多候选走法 (MultiPV)"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/dark_text" />
+
+        <SeekBar
+            android:id="@+id/seekMultiPv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="10"
+            android:progress="3" />
+
+        <TextView
+            android:id="@+id/textMultiPvValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3 种候选"
+            android:textSize="12sp"
+            android:textColor="@color/info_text" />
+
+        <CheckBox
+            android:id="@+id/checkUseNnue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="使用 NNUE 神经网络"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp" />
+
+        <CheckBox
+            android:id="@+id/checkPonder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="启用 Ponder（对手思考时继续搜索）"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/divider"
+            android:layout_marginVertical="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="开局库设置"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="@color/engine_text" />
+
+        <CheckBox
+            android:id="@+id/checkUseBook"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="启用开局库"
+            android:textSize="14sp"
+            android:layout_marginTop="8dp" />
+
+        <CheckBox
+            android:id="@+id/checkCloudEnabled"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="启用云端开局库（在线查询）"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="脱谱步数（超过此步数后不再查库）"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/dark_text" />
+
+        <SeekBar
+            android:id="@+id/seekMaxBookMoves"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="50"
+            android:progress="20" />
+
+        <TextView
+            android:id="@+id/textMaxBookMovesValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="20 步后脱谱"
+            android:textSize="12sp"
+            android:textColor="@color/info_text" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="云端最大脱谱步数"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/dark_text" />
+
+        <SeekBar
+            android:id="@+id/seekMaxCloudMoves"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="60"
+            android:progress="30" />
+
+        <TextView
+            android:id="@+id/textMaxCloudMovesValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="30 步后停止云库查询"
+            android:textSize="12sp"
+            android:textColor="@color/info_text" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="最低开局库权重"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/dark_text" />
+
+        <SeekBar
+            android:id="@+id/seekMinBookWeight"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progress="10" />
+
+        <TextView
+            android:id="@+id/textMinBookWeightValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="≥ 10 权重"
+            android:textSize="12sp"
+            android:textColor="@color/info_text" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="管理本地开局库"
+            android:textSize="14sp"
+            android:layout_marginTop="16dp"
+            android:textStyle="bold"
+            android:textColor="@color/dark_text" />
+
+        <Button
+            android:id="@+id/btnImportBook"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="导入 PolyGlot 开局库文件 (.bin)"
+            android:layout_marginTop="4dp" />
+
+        <Button
+            android:id="@+id/btnDownloadCloudBook"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="下载云端开局库"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:id="@+id/textBookStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="当前未加载任何开局库"
+            android:textSize="12sp"
+            android:textColor="@color/info_text"
+            android:layout_marginTop="4dp"
+            android:padding="8dp"
+            android:background="@color/divider" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/divider"
+            android:layout_marginVertical="16dp" />
+
+        <Button
+            android:id="@+id/btnResetAll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="恢复全部默认设置"
+            android:backgroundTint="#B71C1C"
+            android:textColor="@color/white" />
+
+        <Button
+            android:id="@+id/btnApplyAll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="应用设置"
+            android:layout_marginTop="8dp" />
+
+    </LinearLayout>
+</ScrollView>
