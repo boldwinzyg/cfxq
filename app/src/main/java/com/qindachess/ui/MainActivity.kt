@@ -853,10 +853,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 if (cloudLoading) {
                     // 渲染"云库查询中…"占位
-                    return renderEmptyList("云库查询中…")
+                    return renderEmptyList("云库查询中…", "需要联网，自动从云端开局库查询")
                 }
                 if (cloudCacheRaw.isEmpty()) {
-                    return renderEmptyList("暂无云库数据")
+                    return renderEmptyList("暂无云库数据", "需要联网，自动从云端开局库查询")
                 }
                 cloudCacheRaw.map { (uci, freq) ->
                     val cn = com.qindachess.board.ChineseNotation.toChinese(currentBoard, uci)
@@ -965,6 +965,22 @@ class MainActivity : AppCompatActivity() {
                 setBackgroundColor(resources.getColor(R.color.divider, theme))
             }
             moveListContainer.addView(divider)
+        }
+    }
+
+    /**
+     * 渲染空状态占位（清空招法列表，显示 title/hint 文字）
+     * 用于在异步查询过程中或无数据时显示提示
+     */
+    private fun renderEmptyList(title: String, hint: String) {
+        moveListContainer.removeAllViews()
+        emptyState.visibility = View.VISIBLE
+        val container = emptyState as? LinearLayout
+        if (container != null && container.childCount >= 3) {
+            val t = container.getChildAt(1) as? TextView
+            val h = container.getChildAt(2) as? TextView
+            t?.text = title
+            h?.text = hint
         }
     }
 
