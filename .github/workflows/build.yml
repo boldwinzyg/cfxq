@@ -31,6 +31,12 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
+      # 仓库没有自带 gradlew，先生成它
+      - name: 生成 gradlew
+        run: |
+          gradle wrapper --gradle-version 8.10.2 --distribution-type bin
+          ls -la gradlew gradle/wrapper/
+
       - name: 构建 debug APK
         run: ./gradlew assembleDebug --no-daemon
 
