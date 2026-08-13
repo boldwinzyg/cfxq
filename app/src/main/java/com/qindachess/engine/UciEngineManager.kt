@@ -27,6 +27,9 @@ class UciEngineManager {
     private val pendingResponses = mutableListOf<String>()
     private val responseLock = Object()
 
+    @Volatile var lastError: String? = null
+        private set
+
     private val _engineState = MutableStateFlow(EngineState.IDLE)
     val engineState: StateFlow<EngineState> = _engineState.asStateFlow()
 
@@ -45,10 +48,38 @@ class UciEngineManager {
         withContext(Dispatchers.IO) {
             try {
                 stopEngine()
+                lastError = null
+
+                val file = java.io.File(enginePath)
+                if (!file.exists()) {
+                    lastError = "文件不存在: $enginePath"
+                    Log.e(TAG, lastError!!)
+                    _engineState.value = EngineState.ERROR
+                    return@withContext false
+                }
+                if (!file.canRead()) {
+                    lastError = "文件不可读: $enginePath (权限不足)"
+                    Log.e(TAG, lastError!!)
+                    _engineState.value = EngineState.ERROR
+                    return@withContext false
+                }
 
                 val builder = ProcessBuilder(enginePath)
                 builder.redirectErrorStream(true)
-                process = builder.start()
+                try {
+                    process = builder.start()
+                } catch (se: SecurityException) {
+                    lastError = "SELinux/执行权限被拒! 无法执行 $enginePath\n(Android 10+ 限制: 需把引擎放到 codeCacheDir/ 或已 ROOT 用 su 执行)"
+                    Log.e(TAG, lastError!!)
+                    _engineState.value = EngineState.ERROR
+                    return@withContext false
+                } catch (io: java.io.IOException) {
+                    val detail = io.message ?: io.cause?.message ?: "unknown IO error"
+                    lastError = "启动引擎失败: $detail\n路径: $enginePath\n大小: ${file.length()}B\ncanExec: ${file.canExecute()}\ncanRead: ${file.canRead()}"
+                    Log.e(TAG, lastError!!, io)
+                    _engineState.value = EngineState.ERROR
+                    return@withContext false
+                }
                 inputWriter = BufferedWriter(
                     OutputStreamWriter(process!!.outputStream, "UTF-8")
                 )
@@ -64,7 +95,8 @@ class UciEngineManager {
 
                 sendCommand("uci")
                 if (!waitForResponse("uciok", 5000)) {
-                    Log.e(TAG, "Engine did not respond with uciok")
+                    lastError = "引擎无响应 uciok（文件可能不是合法 UCI 引擎）"
+                    Log.e(TAG, lastError!!)
                     _engineState.value = EngineState.ERROR
                     return@withContext false
                 }
@@ -80,7 +112,8 @@ class UciEngineManager {
 
                 sendCommand("isready")
                 if (!waitForResponse("readyok", 5000)) {
-                    Log.e(TAG, "Engine did not respond with readyok after options")
+                    lastError = "引擎加载选项后无响应 readyok"
+                    Log.e(TAG, lastError!!)
                     _engineState.value = EngineState.ERROR
                     return@withContext false
                 }
@@ -88,7 +121,8 @@ class UciEngineManager {
                 sendCommand("ucinewgame")
                 sendCommand("isready")
                 if (!waitForResponse("readyok", 5000)) {
-                    Log.e(TAG, "Engine did not respond with readyok after ucinewgame")
+                    lastError = "新游戏初始化后无响应 readyok"
+                    Log.e(TAG, lastError!!)
                     _engineState.value = EngineState.ERROR
                     return@withContext false
                 }
@@ -97,7 +131,8 @@ class UciEngineManager {
                 Log.i(TAG, "Engine loaded successfully from $enginePath")
                 true
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to load engine", e)
+                lastError = "意外异常: ${e.javaClass.simpleName} - ${e.message}"
+                Log.e(TAG, lastError!!, e)
                 _engineState.value = EngineState.ERROR
                 stopEngine()
                 false

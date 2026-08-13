@@ -3,6 +3,7 @@ package com.qindachess.ui
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import com.qindachess.board.*
@@ -750,6 +751,7 @@ class ChessBoardView @JvmOverloads constructor(
 
         val piece = board.getPiece(pos.row, pos.col)
         val currentTurn = board.sideToMove
+        Log.d("ChessBoardView", "handleTouch pos=$pos piece=${piece?.type?.name} color=${piece?.color?.name} currentTurn=${currentTurn.name} selected=${selectedPosition}")
 
         if (selectedPosition == null) {
             if (piece != null && piece.color == currentTurn) {

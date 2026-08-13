@@ -370,7 +370,9 @@ class EngineSettingsActivity : AppCompatActivity() {
                     if (nnuePath != null) prefs.nnuePath = nnuePath
                     Toast.makeText(this@EngineSettingsActivity, "引擎已加载", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(this@EngineSettingsActivity, "引擎加载失败", Toast.LENGTH_LONG).show()
+                    val err = app.engineManager.lastError ?: "未知错误"
+                    textEngineStatus.text = "加载失败: $err"
+                    Toast.makeText(this@EngineSettingsActivity, err, Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
                 val cause = e.cause?.message ?: e.message

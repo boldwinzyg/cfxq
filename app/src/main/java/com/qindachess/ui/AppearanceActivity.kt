@@ -70,48 +70,68 @@ class AppearanceActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_appearance)
-        tm = ThemeManager.getInstance(this)
-
-        tabStyle = findViewById(R.id.tabStyle)
-        tabBoard = findViewById(R.id.tabBoard)
-        tabPiece = findViewById(R.id.tabPiece)
-        pageStyle = findViewById(R.id.pageStyle)
-        pageBoard = findViewById(R.id.pageBoard)
-        pagePiece = findViewById(R.id.pagePiece)
-
-        gridThemes = findViewById(R.id.gridThemes)
-        gridSkins = findViewById(R.id.gridSkins)
-        gridPieces = findViewById(R.id.gridPieces)
-
-        textBgStatus = findViewById(R.id.textBgStatus)
-        slideTopBar = findViewById(R.id.slideTopBar)
-        slideBoard = findViewById(R.id.slideBoard)
-        slidePanel = findViewById(R.id.slidePanel)
-        slideBottom = findViewById(R.id.slideBottom)
-        lblTopBar = findViewById(R.id.lblTopBar)
-        lblBoard = findViewById(R.id.lblBoard)
-        lblPanel = findViewById(R.id.lblPanel)
-        lblBottom = findViewById(R.id.lblBottom)
-
-        setupTabSwitcher()
-        setupGrids()
-        setupSliders()
-
-        findViewById<Button>(R.id.btnBack).setOnClickListener { finish() }
-        findViewById<Button>(R.id.btnReset).setOnClickListener {
-            tm.resetToDefaults()
-            Toast.makeText(this, "已恢复默认主题", Toast.LENGTH_SHORT).show()
+        try {
+            setContentView(R.layout.activity_appearance)
+        } catch (e: Exception) {
+            Toast.makeText(this, "布局加载失败: ${e.message}", Toast.LENGTH_LONG).show()
+            finish(); return
         }
-        findViewById<Button>(R.id.btnPickBg).setOnClickListener { pickBg.launch("image/*") }
-        findViewById<Button>(R.id.btnClearBg).setOnClickListener {
-            tm.clearCustomBackground()
-            Toast.makeText(this, "已清除背景图", Toast.LENGTH_SHORT).show()
+        try {
+            tm = ThemeManager.getInstance(this)
+        } catch (e: Exception) {
+            Toast.makeText(this, "ThemeManager 初始化失败: ${e.message}", Toast.LENGTH_LONG).show()
+            finish(); return
         }
 
-        // 实时响应主题变化
-        lifecycleScope.launch {
-            tm.config.collect { cfg -> runOnUiThread { refreshAll(cfg) } }
+        try {
+            tabStyle = findViewById(R.id.tabStyle)
+            tabBoard = findViewById(R.id.tabBoard)
+            tabPiece = findViewById(R.id.tabPiece)
+            pageStyle = findViewById(R.id.pageStyle)
+            pageBoard = findViewById(R.id.pageBoard)
+            pagePiece = findViewById(R.id.pagePiece)
+
+            gridThemes = findViewById(R.id.gridThemes)
+            gridSkins = findViewById(R.id.gridSkins)
+            gridPieces = findViewById(R.id.gridPieces)
+
+            textBgStatus = findViewById(R.id.textBgStatus)
+            slideTopBar = findViewById(R.id.slideTopBar)
+            slideBoard = findViewById(R.id.slideBoard)
+            slidePanel = findViewById(R.id.slidePanel)
+            slideBottom = findViewById(R.id.slideBottom)
+            lblTopBar = findViewById(R.id.lblTopBar)
+            lblBoard = findViewById(R.id.lblBoard)
+            lblPanel = findViewById(R.id.lblPanel)
+            lblBottom = findViewById(R.id.lblBottom)
+
+            setupTabSwitcher()
+            setupGrids()
+            setupSliders()
+
+            findViewById<Button>(R.id.btnBack).setOnClickListener { finish() }
+            findViewById<Button>(R.id.btnReset).setOnClickListener {
+                tm.resetToDefaults()
+                Toast.makeText(this, "已恢复默认主题", Toast.LENGTH_SHORT).show()
+            }
+            findViewById<Button>(R.id.btnPickBg).setOnClickListener { pickBg.launch("image/*") }
+            findViewById<Button>(R.id.btnClearBg).setOnClickListener {
+                tm.clearCustomBackground()
+                Toast.makeText(this, "已清除背景图", Toast.LENGTH_SHORT).show()
+            }
+
+            lifecycleScope.launch {
+                tm.config.collect { cfg ->
+                    runOnUiThread {
+                        try { refreshAll(cfg) } catch (e: Exception) {
+                            android.util.Log.e("Appearance", "refreshAll 崩了: ${e.message}", e)
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("Appearance", "onCreate 崩了: ${e.message}", e)
+            Toast.makeText(this, "界面设置加载失败: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
