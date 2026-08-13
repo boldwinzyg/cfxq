@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#37474F"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/btnBackBook"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="返回"
+            android:padding="12dp"
+            android:src="@android:drawable/ic_media_previous"
+            android:tint="@android:color/white" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="开局库设置"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginEnd="48dp" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="开局库设置"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:textColor="@color/engine_text" />
+
+            <CheckBox
+                android:id="@+id/checkUseBook"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="启用开局库"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp" />
+
+            <CheckBox
+                android:id="@+id/checkCloudEnabled"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="启用云端开局库（在线查询）"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="脱谱步数（超过此步数后不再查库）"
+                android:textSize="14sp"
+                android:layout_marginTop="12dp"
+                android:textColor="@color/dark_text" />
+
+            <SeekBar
+                android:id="@+id/seekMaxBookMoves"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="50"
+                android:progress="20" />
+
+            <TextView
+                android:id="@+id/textMaxBookMovesValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="20 步后脱谱"
+                android:textSize="12sp"
+                android:textColor="@color/info_text" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="云端最大脱谱步数"
+                android:textSize="14sp"
+                android:layout_marginTop="12dp"
+                android:textColor="@color/dark_text" />
+
+            <SeekBar
+                android:id="@+id/seekMaxCloudMoves"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="60"
+                android:progress="30" />
+
+            <TextView
+                android:id="@+id/textMaxCloudMovesValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="30 步后停止云库查询"
+                android:textSize="12sp"
+                android:textColor="@color/info_text" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="最低开局库权重"
+                android:textSize="14sp"
+                android:layout_marginTop="12dp"
+                android:textColor="@color/dark_text" />
+
+            <SeekBar
+                android:id="@+id/seekMinBookWeight"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:progress="10" />
+
+            <TextView
+                android:id="@+id/textMinBookWeightValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="≥ 10 权重"
+                android:textSize="12sp"
+                android:textColor="@color/info_text" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="管理本地开局库"
+                android:textSize="14sp"
+                android:layout_marginTop="16dp"
+                android:textStyle="bold"
+                android:textColor="@color/dark_text" />
+
+            <Button
+                android:id="@+id/btnImportBook"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="导入 PolyGlot 开局库文件 (.bin)"
+                android:layout_marginTop="4dp" />
+
+            <Button
+                android:id="@+id/btnDownloadCloudBook"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="下载云端开局库"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/textBookStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="当前未加载任何开局库"
+                android:textSize="12sp"
+                android:textColor="@color/info_text"
+                android:layout_marginTop="4dp"
+                android:padding="8dp"
+                android:background="@color/divider" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/divider"
+                android:layout_marginVertical="16dp" />
+
+            <Button
+                android:id="@+id/btnApplyBook"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="应用开局库设置" />
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

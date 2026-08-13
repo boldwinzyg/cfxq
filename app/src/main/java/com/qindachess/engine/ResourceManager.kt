@@ -21,7 +21,7 @@ class ResourceManager(private val context: Context) {
     )
 
     private val targetDir: File by lazy {
-        File(context.filesDir, "engines").apply { mkdirs() }
+        File(context.codeCacheDir, "engines").apply { mkdirs() }
     }
 
     private val nnueDir: File by lazy {

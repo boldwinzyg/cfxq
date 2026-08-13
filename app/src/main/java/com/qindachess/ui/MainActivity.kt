@@ -495,14 +495,10 @@ class MainActivity : AppCompatActivity() {
     private fun handleMenuClick(label: String) {
         when (label) {
             "引擎设置" -> {
-                val it = Intent(this, SettingsActivity::class.java)
-                it.putExtra(SettingsActivity.EXTRA_SECTION, SettingsActivity.SECTION_ENGINE)
-                startActivity(it)
+                startActivity(Intent(this, EngineSettingsActivity::class.java))
             }
             "开局库设置" -> {
-                val it = Intent(this, SettingsActivity::class.java)
-                it.putExtra(SettingsActivity.EXTRA_SECTION, SettingsActivity.SECTION_BOOK)
-                startActivity(it)
+                startActivity(Intent(this, BookSettingsActivity::class.java))
             }
             "界面设置" -> {
                 startActivity(Intent(this, AppearanceActivity::class.java))
@@ -605,9 +601,7 @@ class MainActivity : AppCompatActivity() {
             .setTitle("引擎未就绪")
             .setMessage("当前未加载任何象棋引擎，无法进行分析。\n请到【菜单 → 引擎设置】配置引擎路径（必须为可执行的 pikafish/yukfish/so 文件）。")
             .setPositiveButton("去引擎设置") { _, _ ->
-                val it = Intent(this, SettingsActivity::class.java)
-                it.putExtra(SettingsActivity.EXTRA_SECTION, SettingsActivity.SECTION_ENGINE)
-                startActivity(it)
+                startActivity(Intent(this, EngineSettingsActivity::class.java))
             }
             .setNegativeButton("取消", null)
             .show()

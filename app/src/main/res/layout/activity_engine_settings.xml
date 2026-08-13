@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#37474F"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/btnBackEngine"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="返回"
+            android:padding="12dp"
+            android:src="@android:drawable/ic_media_previous"
+            android:tint="@android:color/white" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="引擎设置"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginEnd="48dp" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="引擎设置"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:textColor="@color/engine_text" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="引擎可执行文件路径（留空则使用内置）"
+                android:textSize="14sp"
+                android:layout_marginTop="12dp"
+                android:textColor="@color/dark_text" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/textEnginePath"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="（未设置）"
+                    android:textSize="12sp"
+                    android:textColor="@color/info_text"
+                    android:singleLine="true"
+                    android:ellipsize="middle"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground"
+                    android:padding="6dp" />
+
+                <Button
+                    android:id="@+id/btnChooseEngine"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="选择"
+                    android:textSize="12sp"
+                    android:minHeight="36dp"
+                    android:paddingHorizontal="12dp" />
+
+                <Button
+                    android:id="@+id/btnClearEngine"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="清除"
+                    android:textSize="12sp"
+                    android:minHeight="36dp"
+                    android:paddingHorizontal="12dp"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="（提示：点击路径框 或 [选择] 按钮均可更换引擎；点 [清除] 恢复内置）"
+                android:textSize="11sp"
+                android:textColor="#888888"
+                android:layout_marginTop="2dp" />
+
+            <TextView
+                android:id="@+id/textEngineStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="引擎状态:未知"
+                android:textSize="12sp"
+                android:textColor="@color/info_text"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="NNUE 评估文件（可选）"
+                android:textSize="14sp"
+                android:layout_marginTop="12dp"
+                android:textColor="@color/dark_text" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/textNnuePath"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="（未设置）"
+                    android:textSize="12sp"
+                    android:textColor="@color/info_text"
+                    android:singleLine="true"
+                    android:ellipsize="middle"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground"
+                    android:padding="6dp" />
+
+                <Button
+                    android:id="@+id/btnChooseNnue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="选择"
+                    android:textSize="12sp"
+                    android:minHeight="36dp"
+                    android:paddingHorizontal="12dp" />
+
+                <Button
+                    android:id="@+id/btnClearNnue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="清除"
+                    android:textSize="12sp"
+                    android:minHeight="36dp"
+                    android:paddingHorizontal="12dp"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/divider"
+                android:layout_marginVertical="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="思考深度"
+                android:textSize="14sp"
+                android:layout_marginTop="12dp"
+                android:textColor="@color/dark_text" />
+
+            <SeekBar
+                android:id="@+id/seekDepth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="25"
+                android:progress="12" />
+
+            <TextView
+                android:id="@+id/textDepthValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="深度: 12"
+                android:textSize="12sp"
+                android:textColor="@color/info_text" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="思考时间（毫秒）"
+                android:textSize="14sp"
+                android:layout_marginTop="12dp"
+                android:textColor="@color/dark_text" />
+
+            <SeekBar
+                android:id="@+id/seekTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="30"
+                android:progress="6" />
+
+            <TextView
+                android:id="@+id/textTimeValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="时间: 3000ms"
+                android:textSize="12sp"
+                android:textColor="@color/info_text" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="线程数"
+                        android:textSize="14sp"
+                        android:textColor="@color/dark_text" />
+
+                    <SeekBar
+                        android:id="@+id/seekThreads"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:max="8"
+                        android:progress="2" />
+
+                    <TextView
+                        android:id="@+id/textThreadsValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="2 线程"
+                        android:textSize="12sp"
+                        android:textColor="@color/info_text" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="哈希表(MB)"
+                        android:textSize="14sp"
+                        android:textColor="@color/dark_text" />
+
+                    <SeekBar
+                        android:id="@+id/seekHash"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:max="15"
+                        android:progress="3" />
+
+                    <TextView
+                        android:id="@+id/textHashValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="256 MB"
+                        android:textSize="12sp"
+                        android:textColor="@color/info_text" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="多候选走法 (MultiPV)"
+                android:textSize="14sp"
+                android:layout_marginTop="12dp"
+                android:textColor="@color/dark_text" />
+
+            <SeekBar
+                android:id="@+id/seekMultiPv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="10"
+                android:progress="3" />
+
+            <TextView
+                android:id="@+id/textMultiPvValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3 种候选"
+                android:textSize="12sp"
+                android:textColor="@color/info_text" />
+
+            <CheckBox
+                android:id="@+id/checkUseNnue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="使用 NNUE 神经网络"
+                android:textSize="14sp"
+                android:layout_marginTop="12dp" />
+
+            <CheckBox
+                android:id="@+id/checkPonder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="启用 Ponder（对手思考时继续搜索）"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/divider"
+                android:layout_marginVertical="16dp" />
+
+            <Button
+                android:id="@+id/btnReloadEngine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="重新加载引擎" />
+
+            <Button
+                android:id="@+id/btnApplyEngine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="应用引擎设置"
+                android:layout_marginTop="8dp" />
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

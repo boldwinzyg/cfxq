@@ -679,13 +679,11 @@ class ChessBoardView @JvmOverloads constructor(
             canvas.drawText((9 - col).toString(), x, topY, coordPaint)
             canvas.drawText((9 - col).toString(), x, bottomY, coordPaint)
         }
-        // 左 + 右：棋盘行号
+        // 右：棋盘行号（只保留右侧）
         for (row in 0 until 10) {
             val (drawRow, _) = transformPosition(row, 0)
-            val leftX = originX - textPaint.textSize * 0.5f
             val rightX = originX + 8 * cellW + textPaint.textSize * 0.8f
             val y = originY + drawRow * cellH + cellSize / 3
-            canvas.drawText((10 - row).toString(), leftX, y, coordPaint)
             canvas.drawText((10 - row).toString(), rightX, y, coordPaint)
         }
 
