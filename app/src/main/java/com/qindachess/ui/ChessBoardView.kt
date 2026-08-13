@@ -738,17 +738,25 @@ class ChessBoardView @JvmOverloads constructor(
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (!isInteractive) return false
-        when (event.action) {
+        when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 currentPointerPos = fromScreen(event.x, event.y)
-                handleTouch(currentPointerPos)
             }
             MotionEvent.ACTION_MOVE -> {
                 currentPointerPos = fromScreen(event.x, event.y)
             }
             MotionEvent.ACTION_UP -> {
-                val pos = fromScreen(event.x, event.y)
-                handleTouch(pos)
+                val downPos = currentPointerPos
+                val upPos = fromScreen(event.x, event.y)
+                currentPointerPos = null
+                // 只有 DOWN 和 UP 在同一个格子才算一次有效点击
+                // （避免手指滑过多个格子导致误触）
+                if (downPos != null && upPos != null && downPos.row == upPos.row && downPos.col == upPos.col) {
+                    Log.d("ChessBoardView", "tap detected at $upPos")
+                    handleTouch(upPos)
+                }
+            }
+            MotionEvent.ACTION_CANCEL -> {
                 currentPointerPos = null
             }
         }
