@@ -85,6 +85,8 @@ class ChessBoardView @JvmOverloads constructor(
         set(value) { field = value; invalidate() }
 
     init {
+        isClickable = true
+        isFocusable = true
         applySkin()
     }
 
@@ -192,6 +194,7 @@ class ChessBoardView @JvmOverloads constructor(
     }
 
     override fun onDraw(canvas: Canvas) {
+        if (cellW <= 0f || cellH <= 0f) calculateDimensions()
         super.onDraw(canvas)
         drawBoardBackground(canvas)
         drawGridLines(canvas)
@@ -719,11 +722,17 @@ class ChessBoardView @JvmOverloads constructor(
     }
 
     private fun fromScreen(x: Float, y: Float): Position? {
+        if (cellW <= 0f || cellH <= 0f) {
+            // 尺寸未初始化，无法定位
+            Log.w("ChessBoardView", "fromScreen: cellW/cellH 为 0，尺寸未就绪 (w=$cellW, h=$cellH, width=$width, height=$height)")
+            return null
+        }
         val drawCol = ((x - originX) / cellW + 0.5f).toInt()
         val drawRow = ((y - originY) / cellH + 0.5f).toInt()
         if (drawCol !in 0..8 || drawRow !in 0..9) return null
         val (origRow, origCol) = transformPosition(drawRow, drawCol)
         if (origRow !in 0..9 || origCol !in 0..8) return null
+        Log.d("ChessBoardView", "fromScreen ($x,$y) → pos($origRow,$origCol) draw=($drawRow,$drawCol)")
         return Position(origRow, origCol)
     }
 

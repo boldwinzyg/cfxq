@@ -64,22 +64,15 @@ class UciEngineManager {
                     return@withContext false
                 }
 
-                val builder = ProcessBuilder(enginePath)
-                builder.redirectErrorStream(true)
-                try {
-                    process = builder.start()
-                } catch (se: SecurityException) {
-                    lastError = "SELinux/执行权限被拒! 无法执行 $enginePath\n(Android 10+ 限制: 需把引擎放到 codeCacheDir/ 或已 ROOT 用 su 执行)"
+                process = tryStartProcess(enginePath)
+
+                if (process == null) {
+                    lastError = buildLastError(enginePath, file)
                     Log.e(TAG, lastError!!)
                     _engineState.value = EngineState.ERROR
                     return@withContext false
-                } catch (io: java.io.IOException) {
-                    val detail = io.message ?: io.cause?.message ?: "unknown IO error"
-                    lastError = "启动引擎失败: $detail\n路径: $enginePath\n大小: ${file.length()}B\ncanExec: ${file.canExecute()}\ncanRead: ${file.canRead()}"
-                    Log.e(TAG, lastError!!, io)
-                    _engineState.value = EngineState.ERROR
-                    return@withContext false
                 }
+
                 inputWriter = BufferedWriter(
                     OutputStreamWriter(process!!.outputStream, "UTF-8")
                 )
@@ -152,6 +145,99 @@ class UciEngineManager {
                 false
             }
         }
+
+    private fun tryStartProcess(enginePath: String): Process? {
+        val file = java.io.File(enginePath)
+        val attempts = mutableListOf<Pair<String, () -> Process?>>()
+
+        // 1) 直接路径
+        attempts.add("直接执行" to {
+            try {
+                ProcessBuilder(enginePath).redirectErrorStream(true).start()
+            } catch (e: Exception) {
+                Log.d(TAG, "直接执行失败: ${e.message}")
+                null
+            }
+        })
+
+        // 2) 通过 sh -c 执行（绕过路径中特殊字符）
+        attempts.add("sh -c 执行" to {
+            try {
+                ProcessBuilder("/system/bin/sh", "-c", "\"$enginePath\"").redirectErrorStream(true).start()
+            } catch (e: Exception) {
+                Log.d(TAG, "sh -c 执行失败: ${e.message}")
+                null
+            }
+        })
+
+        // 3) Root 设备用 su 执行（绕过 SELinux）
+        if (java.io.File("/system/bin/su").exists() || java.io.File("/system/xbin/su").exists()) {
+            attempts.add("su -c 执行" to {
+                try {
+                    ProcessBuilder("su", "-c", "\"$enginePath\"").redirectErrorStream(true).start()
+                } catch (e: Exception) {
+                    Log.d(TAG, "su -c 执行失败: ${e.message}")
+                    null
+                }
+            })
+        }
+
+        // 4) Termux 兼容：如果 Termux 存在，尝试用它的 bin 目录
+        val termuxBin = java.io.File("/data/data/com.termux/files/usr/bin")
+        if (termuxBin.exists()) {
+            attempts.add("Termux 环境执行" to {
+                try {
+                    // 先把引擎拷贝到 Termux 可执行目录
+                    val dest = java.io.File(termuxBin, "qinda_engine")
+                    file.copyTo(dest, overwrite = true)
+                    dest.setExecutable(true, false)
+                    ProcessBuilder(dest.absolutePath).redirectErrorStream(true).start()
+                } catch (e: Exception) {
+                    Log.d(TAG, "Termux 执行失败: ${e.message}")
+                    null
+                }
+            })
+        }
+
+        for ((label, block) in attempts) {
+            Log.i(TAG, "尝试 [$label] 启动引擎: $enginePath")
+            val p = block()
+            if (p != null && p.isAlive) {
+                Log.i(TAG, "✅ 引擎启动成功 via [$label]")
+                running = true
+                return p
+            }
+            p?.destroy()
+        }
+
+        return null
+    }
+
+    private fun buildLastError(enginePath: String, file: java.io.File): String {
+        val reasons = mutableListOf<String>()
+        reasons.add("路径: $enginePath")
+        reasons.add("大小: ${file.length()}B")
+        reasons.add("canExecute: ${file.canExecute()}")
+        reasons.add("canRead: ${file.canRead()}")
+        reasons.add("isFile: ${file.isFile}")
+        reasons.add("parent exists: ${file.parentFile?.exists()}")
+        reasons.add("isSymlink: ${file.canonicalPath != file.absolutePath}")
+
+        // 检查是否有 root
+        val hasSu = java.io.File("/system/bin/su").exists() || java.io.File("/system/xbin/su").exists()
+        val hasTermux = java.io.File("/data/data/com.termux").exists()
+
+        val tip = when {
+            hasSu -> "检测到设备有 root，已尝试 su -c 方式仍失败。可能引擎不是 ARM64 架构，或文件损坏。"
+            hasTermux -> "检测到 Termux，已尝试拷贝到 Termux bin 目录执行仍失败。"
+            else -> "Android SELinux 限制：普通应用无法直接执行数据目录下的 ELF 二进制文件。\n" +
+                "解决方案:\n" +
+                "  1) 使用 Root 设备，本应用会自动用 su 执行\n" +
+                "  2) 安装 Termux，把引擎放到 /data/data/com.termux/files/usr/bin/\n" +
+                "  3) 确认引擎文件是 ARM64 (aarch64) 架构的二进制"
+        }
+        return "启动引擎失败（尝试了多种方式均被拒绝）\n${reasons.joinToString("\n")}\n\n💡 $tip"
+    }
 
     private fun readLoop() {
         try {
