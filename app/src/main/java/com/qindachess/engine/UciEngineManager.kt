@@ -194,54 +194,45 @@ class UciEngineManager {
     private fun tryStartProcess(enginePath: String): Process? {
         val file = java.io.File(enginePath)
 
-        val attempts = mutableListOf<Triple<String, Array<String>, Boolean>>()
+        data class Attempt(val label: String, val cmd: Array<String>)
 
-        // 1) 直接 ProcessBuilder
-        attempts.add(Triple("直接执行", arrayOf(enginePath), true))
+        val attempts = mutableListOf<Attempt>()
+        attempts.add(Attempt("直接执行", arrayOf(enginePath)))
+        attempts.add(Attempt("sh exec", arrayOf("/system/bin/sh", "-c", "exec \"$enginePath\"")))
+        attempts.add(Attempt("run-as", arrayOf("run-as", "com.qindachess", "sh -c \"exec $enginePath\"")))
 
-        // 2) sh -c 包路径
-        attempts.add(Triple("sh -c 执行", arrayOf("/system/bin/sh", "-c", "\"$enginePath\""), true))
-
-        // 3) run-as（非 Root 也能用，但只能访问本包目录）
-        attempts.add(Triple("run-as 执行", arrayOf("run-as", "com.qindachess", enginePath), true))
-
-        // 4) su -c（Root 设备）
-        if (java.io.File("/system/bin/su").exists() || java.io.File("/system/xbin/su").exists()) {
-            attempts.add(Triple("su -c 执行", arrayOf("su", "-c", "\"$enginePath\""), true))
-            // su -c 里用 sh -c 再包一层（某些 root 管理器处理引号不一样）
-            attempts.add(Triple("su sh -c 执行", arrayOf("su", "-c", "sh -c \"$enginePath\""), true))
+        val hasSu = java.io.File("/system/bin/su").exists() || java.io.File("/system/xbin/su").exists()
+        if (hasSu) {
+            attempts.add(Attempt("su -c exec", arrayOf("su", "-c", "exec \"$enginePath\"")))
+            attempts.add(Attempt("su sh exec", arrayOf("su", "-c", "sh -c \"exec $enginePath\"")))
+            attempts.add(Attempt("su 直接", arrayOf("su", "-c", enginePath)))
         }
 
-        // 5) Termux 兼容
         val termuxBin = java.io.File("/data/data/com.termux/files/usr/bin")
         if (termuxBin.exists()) {
-            attempts.add(Triple("Termux 执行", arrayOf(termuxBin.resolve("qinda_engine").absolutePath), false))
+            try {
+                val dest = java.io.File(termuxBin, "qinda_engine")
+                file.copyTo(dest, overwrite = true)
+                dest.setExecutable(true, false)
+                Log.i(TAG, "Termux 拷贝: ${dest.absolutePath} (${dest.length()}B)")
+                attempts.add(Attempt("Termux", arrayOf(dest.absolutePath)))
+            } catch (e: Exception) {
+                Log.w(TAG, "Termux 拷贝失败: ${e.message}")
+            }
         }
 
-        for ((label, cmd, copyIfNeeded) in attempts) {
-            Log.i(TAG, "🪄 尝试 [$label]: ${cmd.joinToString(" ")}")
+        for ((label, cmd) in attempts) {
+            Log.i(TAG, "🪄 [$label]: ${cmd.joinToString(" ")}")
             try {
-                val builder = ProcessBuilder(*cmd)
-                    .redirectErrorStream(true)
-                    .directory(file.parentFile)
-
-                // Termux 路径需要先拷贝
-                if (label == "Termux 执行" && copyIfNeeded) {
-                    val dest = java.io.File(termuxBin, "qinda_engine")
-                    file.copyTo(dest, overwrite = true)
-                    dest.setExecutable(true, false)
-                }
-
-                val p = builder.start()
-                // 给进程一点启动时间再判断
-                Thread.sleep(200)
+                val p = ProcessBuilder(*cmd).redirectErrorStream(true).directory(file.parentFile).start()
+                Thread.sleep(400)
                 if (p.isAlive) {
-                    Log.i(TAG, "✅ 进程启动成功 via [$label], PID 存活")
+                    Log.i(TAG, "✅ [$label] 进程存活！引擎已启动 (PID=${p.hashCode()})")
                     running = true
                     return p
                 } else {
                     val exit = try { p.exitValue() } catch (_: Exception) { -1 }
-                    Log.w(TAG, "进程启动后立即退出，exitCode=$exit")
+                    Log.w(TAG, "[$label] 立即退出 exitCode=$exit")
                     p.destroy()
                 }
             } catch (e: Exception) {
