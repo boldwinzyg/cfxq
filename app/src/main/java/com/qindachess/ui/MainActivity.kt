@@ -244,7 +244,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnAnalysis.setOnClickListener {
-            // 闪电：单次分析（与持续分析互斥）
             if (isSingleAnalyzing) {
                 Toast.makeText(this, "分析进行中，请稍候", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -254,31 +253,26 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             if (!app.engineManager.isReady()) {
-                Toast.makeText(this, "引擎未就绪，请到菜单→引擎设置 配置引擎", Toast.LENGTH_LONG).show()
-                return@setOnClickListener
-            }
-            isSingleAnalyzing = true
-            setToolButtonSelected(btnAnalysis)
-            lifecycleScope.launch {
-                try {
-                    runAnalysis()
-                } finally {
-                    isSingleAnalyzing = false
-                    runOnUiThread {
-                        setToolButtonUnselected(btnAnalysis)
+                Toast.makeText(this, "引擎未就绪，正在自动加载...", Toast.LENGTH_SHORT).show()
+                lifecycleScope.launch {
+                    val loaded = autoLoadEngine()
+                    if (!loaded) {
+                        showEngineNotReadyDialog()
+                    } else {
+                        runSingleAnalysis()
                     }
                 }
+                return@setOnClickListener
             }
+            lifecycleScope.launch { runSingleAnalysis() }
         }
 
         btnMonitor1.setOnClickListener {
-            // 电脑执红：toggle 让电脑代替红方走子
-            toggleAutoPlayRed()
+            lifecycleScope.launch { toggleAutoPlayRed() }
         }
 
         btnMonitor2.setOnClickListener {
-            // 电脑执黑：toggle 让电脑代替黑方走子
-            toggleAutoPlayBlack()
+            lifecycleScope.launch { toggleAutoPlayBlack() }
         }
 
         btnCloud.setOnClickListener {
@@ -540,29 +534,36 @@ class MainActivity : AppCompatActivity() {
 
     private data class MenuItem(val label: String, val icon: Int)
 
-    private suspend fun runAnalysis() {
+    private suspend fun runSingleAnalysis() {
         val app = application as QinDaApp
         val engine = app.engineManager
 
-        if (!engine.isReady()) {
-            Toast.makeText(this, "引擎未就绪", Toast.LENGTH_SHORT).show()
-            return
+        isSingleAnalyzing = true
+        setToolButtonSelected(btnAnalysis)
+        try {
+            if (!engine.isReady()) {
+                runOnUiThread { Toast.makeText(this@MainActivity, "引擎未就绪", Toast.LENGTH_SHORT).show() }
+                return
+            }
+
+            val state = app.gameManager.gameState.value
+            engine.setPosition(state.fen, state.moveHistory.map { it.toUci() })
+
+            val result = engine.search(
+                com.qindachess.engine.SearchOptions(depth = 12, timeMs = 3000, multiPv = 5)
+            )
+
+            val allMoves: List<com.qindachess.engine.EngineMove> = if (result.moves.isEmpty()) {
+                listOf(com.qindachess.engine.EngineMove(uciMove = result.bestMove, scoreCp = 0))
+            } else {
+                result.moves
+            }
+            renderEngineHints(allMoves)
+            boardView.lastMove = Move.fromUci(result.bestMove)
+        } finally {
+            isSingleAnalyzing = false
+            runOnUiThread { setToolButtonUnselected(btnAnalysis) }
         }
-
-        val state = app.gameManager.gameState.value
-        engine.setPosition(state.fen, state.moveHistory.map { it.toUci() })
-
-        val result = engine.search(
-            com.qindachess.engine.SearchOptions(depth = 12, timeMs = 3000, multiPv = 5)
-        )
-
-        val allMoves: List<com.qindachess.engine.EngineMove> = if (result.moves.isEmpty()) {
-            listOf(com.qindachess.engine.EngineMove(uciMove = result.bestMove, scoreCp = 0))
-        } else {
-            result.moves
-        }
-        renderEngineHints(allMoves)
-        boardView.lastMove = Move.fromUci(result.bestMove)
     }
 
     private fun toggleContinuousAnalyze() {
@@ -570,7 +571,6 @@ class MainActivity : AppCompatActivity() {
         val engine = app.engineManager
 
         if (engine.isAnalyzing.value) {
-            // 正在持续分析 → 停止
             engine.stopContinuousAnalyze()
             boardView.engineHints = emptyList()
             setToolButtonUnselected(btnSearch)
@@ -578,10 +578,23 @@ class MainActivity : AppCompatActivity() {
             btnSearch.setColorFilter(null)
             Toast.makeText(this, "⏹ 已停止持续分析", Toast.LENGTH_SHORT).show()
         } else {
-            // 未在持续分析 → 启动
             if (!engine.isReady()) {
-                // 引擎未就绪：弹对话框让用户去引擎设置
-                showEngineNotReadyDialog()
+                // 引擎未就绪 → 自动尝试加载（用用户已保存的路径或 assets 内置）
+                Toast.makeText(this, "引擎未就绪，正在尝试自动加载...", Toast.LENGTH_SHORT).show()
+                lifecycleScope.launch {
+                    val loaded = autoLoadEngine()
+                    if (!loaded) {
+                        showEngineNotReadyDialog()
+                    } else {
+                        // 加载成功 → 自动启动持续分析
+                        val state = app.gameManager.gameState.value
+                        val opts = com.qindachess.engine.SearchOptions(depth = 30, multiPv = 5, threads = 2)
+                        engine.startContinuousAnalyze(opts, state.fen, state.moveHistory.map { it.toUci() })
+                        setToolButtonSelected(btnSearch)
+                        btnSearch.contentDescription = "停止持续分析"
+                        Toast.makeText(this@MainActivity, "🔍 引擎已就绪，启动持续分析", Toast.LENGTH_SHORT).show()
+                    }
+                }
                 return
             }
             val state = app.gameManager.gameState.value
@@ -590,6 +603,39 @@ class MainActivity : AppCompatActivity() {
             setToolButtonSelected(btnSearch)
             btnSearch.contentDescription = "停止持续分析"
             Toast.makeText(this, "🔍 已启动持续分析（实时箭头）", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * 自动加载引擎：从已保存的路径或 assets 内置引擎加载。
+     * 返回 true 表示成功，engineManager.isReady() 为 true。
+     */
+    private suspend fun autoLoadEngine(): Boolean {
+        val app = application as QinDaApp
+        val prefs = app.prefs
+        return try {
+            val enginePath = if (prefs.enginePath.isNotBlank() && java.io.File(prefs.enginePath).exists()) {
+                prefs.enginePath
+            } else {
+                app.resourceManager.deployAssets().enginePath ?: return false
+            }
+            val nnuePath = if (prefs.nnuePath.isNotBlank() && java.io.File(prefs.nnuePath).exists()) {
+                prefs.nnuePath
+            } else {
+                app.resourceManager.deployAssets().nnuePath
+            }
+            val ok = app.engineManager.loadEngine(enginePath, nnuePath)
+            if (ok) {
+                prefs.enginePath = enginePath
+                if (nnuePath != null) prefs.nnuePath = nnuePath
+                true
+            } else {
+                Log.e(TAG, "autoLoadEngine failed: ${app.engineManager.lastError}")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "autoLoadEngine exception", e)
+            false
         }
     }
 
@@ -611,13 +657,12 @@ class MainActivity : AppCompatActivity() {
      * 电脑执红：让电脑走红方（用户走黑方）。
      * 切换状态：再次点击可停止。
      */
-    private fun toggleAutoPlayRed() {
+    private suspend fun toggleAutoPlayRed() {
         val app = application as QinDaApp
         val engine = app.engineManager
         val gm = app.gameManager
 
         if (gm.autoPlay && !gm.playAsRed) {
-            // 已在电脑执红 → 停止
             stopAutoPlay()
             setToolButtonUnselected(btnMonitor1)
             Toast.makeText(this, "⏹ 已停止电脑执红", Toast.LENGTH_SHORT).show()
@@ -625,34 +670,37 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (!engine.isReady()) {
-            showEngineNotReadyDialog()
-            return
+            Toast.makeText(this, "引擎未就绪，正在自动加载...", Toast.LENGTH_SHORT).show()
+            val loaded = autoLoadEngine()
+            if (!loaded) {
+                runOnUiThread { showEngineNotReadyDialog() }
+                return
+            }
         }
 
-        // 启动电脑执红
-        stopAutoPlay()  // 先停掉另一种状态
+        stopAutoPlay()
         gm.autoPlay = true
-        gm.playAsRed = false   // 电脑走红方
-        setToolButtonSelected(btnMonitor1)
-        setToolButtonUnselected(btnMonitor2)
-        Toast.makeText(this, "🤖 电脑执红已开始", Toast.LENGTH_SHORT).show()
+        gm.playAsRed = false
+        runOnUiThread {
+            setToolButtonSelected(btnMonitor1)
+            setToolButtonUnselected(btnMonitor2)
+            Toast.makeText(this, "🤖 电脑执红已开始", Toast.LENGTH_SHORT).show()
+        }
 
-        // 如果当前轮到红方，触发自动走子
         if (gm.gameState.value.sideToMove == com.qindachess.board.PieceColor.RED) {
-            lifecycleScope.launch { gm.makeAutoMove() }
+            gm.makeAutoMove()
         }
     }
 
     /**
      * 电脑执黑：让电脑走黑方（用户走红方）。
      */
-    private fun toggleAutoPlayBlack() {
+    private suspend fun toggleAutoPlayBlack() {
         val app = application as QinDaApp
         val engine = app.engineManager
         val gm = app.gameManager
 
         if (gm.autoPlay && gm.playAsRed) {
-            // 已在电脑执黑 → 停止
             stopAutoPlay()
             setToolButtonUnselected(btnMonitor2)
             Toast.makeText(this, "⏹ 已停止电脑执黑", Toast.LENGTH_SHORT).show()
@@ -660,21 +708,25 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (!engine.isReady()) {
-            showEngineNotReadyDialog()
-            return
+            Toast.makeText(this, "引擎未就绪，正在自动加载...", Toast.LENGTH_SHORT).show()
+            val loaded = autoLoadEngine()
+            if (!loaded) {
+                runOnUiThread { showEngineNotReadyDialog() }
+                return
+            }
         }
 
-        // 启动电脑执黑
         stopAutoPlay()
         gm.autoPlay = true
-        gm.playAsRed = true    // 电脑走黑方
-        setToolButtonSelected(btnMonitor2)
-        setToolButtonUnselected(btnMonitor1)
-        Toast.makeText(this, "🤖 电脑执黑已开始", Toast.LENGTH_SHORT).show()
+        gm.playAsRed = true
+        runOnUiThread {
+            setToolButtonSelected(btnMonitor2)
+            setToolButtonUnselected(btnMonitor1)
+            Toast.makeText(this@MainActivity, "🤖 电脑执黑已开始", Toast.LENGTH_SHORT).show()
+        }
 
-        // 如果当前轮到黑方，触发自动走子
         if (gm.gameState.value.sideToMove == com.qindachess.board.PieceColor.BLACK) {
-            lifecycleScope.launch { gm.makeAutoMove() }
+            gm.makeAutoMove()
         }
     }
 

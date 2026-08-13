@@ -93,13 +93,24 @@ class UciEngineManager {
                 readThread!!.isDaemon = true
                 readThread!!.start()
 
+                // 同时发送 uci 和 ucci（中国象棋引擎大多支持 UCCI 协议）
+                sendCommand("ucci")
                 sendCommand("uci")
-                if (!waitForResponse("uciok", 5000)) {
-                    lastError = "引擎无响应 uciok（文件可能不是合法 UCI 引擎）"
+                val uciOk = waitForResponse("uciok", 2000)
+                val ucciOk = if (!uciOk) waitForResponse("ucciok", 3000) else false
+                if (!uciOk && !ucciOk) {
+                    val existingOutput: List<String> = synchronized(responseLock) {
+                        pendingResponses.toList()
+                    }
+                    lastError = "引擎无响应 uciok/ucciok（文件可能不是合法象棋引擎）\n" +
+                        "已收到输出(${existingOutput.size}行): ${existingOutput.take(5).joinToString(" | ")}\n" +
+                        "进程是否存活: ${process?.isAlive}\n" +
+                        "running flag: $running"
                     Log.e(TAG, lastError!!)
                     _engineState.value = EngineState.ERROR
                     return@withContext false
                 }
+                Log.i(TAG, "引擎协议握手成功 (uciok=$uciOk, ucciok=$ucciOk)")
 
                 sendCommand("setoption name Threads value ${SearchOptions().threads}")
                 sendCommand("setoption name Hash value ${SearchOptions().hashSize}")
@@ -107,7 +118,9 @@ class UciEngineManager {
 
                 if (nnuePath != null) {
                     sendCommand("setoption name EvalFile value $nnuePath")
+                    sendCommand("setoption name evalfile value $nnuePath")
                     sendCommand("setoption name UseNNUE value true")
+                    sendCommand("setoption name usennue value true")
                 }
 
                 sendCommand("isready")
@@ -118,6 +131,7 @@ class UciEngineManager {
                     return@withContext false
                 }
 
+                sendCommand("newgame")
                 sendCommand("ucinewgame")
                 sendCommand("isready")
                 if (!waitForResponse("readyok", 5000)) {

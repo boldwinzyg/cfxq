@@ -70,16 +70,30 @@ class AppearanceActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         try {
             setContentView(R.layout.activity_appearance)
-        } catch (e: Exception) {
-            Toast.makeText(this, "布局加载失败: ${e.message}", Toast.LENGTH_LONG).show()
-            finish(); return
+        } catch (e: Throwable) {
+            android.util.Log.e("Appearance", "setContentView 失败", e)
+            val root = ScrollView(this).apply {
+                setBackgroundColor(Color.parseColor("#F5F5F5"))
+                val text = TextView(this@AppearanceActivity).apply {
+                    text = "界面设置加载失败: ${e.message}\n\n请升级到最新版本，或清除应用数据后重试。"
+                    textSize = 16f
+                    setTextColor(Color.parseColor("#333333"))
+                    setPadding(32, 32, 32, 32)
+                }
+                addView(text)
+            }
+            setContentView(root)
+            return
         }
+
         try {
             tm = ThemeManager.getInstance(this)
-        } catch (e: Exception) {
-            Toast.makeText(this, "ThemeManager 初始化失败: ${e.message}", Toast.LENGTH_LONG).show()
+        } catch (e: Throwable) {
+            android.util.Log.e("Appearance", "ThemeManager 初始化失败", e)
+            Toast.makeText(this, "主题管理器初始化失败: ${e.message}", Toast.LENGTH_LONG).show()
             finish(); return
         }
 
@@ -123,15 +137,15 @@ class AppearanceActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 tm.config.collect { cfg ->
                     runOnUiThread {
-                        try { refreshAll(cfg) } catch (e: Exception) {
+                        try { refreshAll(cfg) } catch (e: Throwable) {
                             android.util.Log.e("Appearance", "refreshAll 崩了: ${e.message}", e)
                         }
                     }
                 }
             }
-        } catch (e: Exception) {
-            android.util.Log.e("Appearance", "onCreate 崩了: ${e.message}", e)
-            Toast.makeText(this, "界面设置加载失败: ${e.message}", Toast.LENGTH_LONG).show()
+        } catch (e: Throwable) {
+            android.util.Log.e("Appearance", "onCreate 控件绑定/初始化崩了", e)
+            Toast.makeText(this, "界面部分功能初始化失败: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 

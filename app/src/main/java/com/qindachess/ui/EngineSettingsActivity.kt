@@ -208,7 +208,10 @@ class EngineSettingsActivity : AppCompatActivity() {
 
         btnApplyEngine.setOnClickListener {
             applyEngineSettings()
-            Toast.makeText(this, "引擎设置已应用", Toast.LENGTH_SHORT).show()
+            // 同时打开自动走子（引擎就绪后让电脑自动下棋）
+            (application as QinDaApp).gameManager.autoPlay = true
+            Toast.makeText(this, "引擎设置已应用，自动走子已开启\n正在重新加载引擎...", Toast.LENGTH_LONG).show()
+            reloadEngine()
         }
     }
 
@@ -301,7 +304,8 @@ class EngineSettingsActivity : AppCompatActivity() {
                 dest.setExecutable(true, false)
                 prefs.enginePath = dest.absolutePath
                 loadCurrentValues()
-                Toast.makeText(this@EngineSettingsActivity, "引擎已保存: ${dest.name}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@EngineSettingsActivity, "引擎已保存: ${dest.name}\n正在加载...", Toast.LENGTH_SHORT).show()
+                reloadEngine()
             } catch (e: Exception) {
                 textEngineStatus.text = "导入失败: ${e.message}"
                 Toast.makeText(this@EngineSettingsActivity, "导入引擎失败: ${e.message}", Toast.LENGTH_LONG).show()
@@ -321,7 +325,8 @@ class EngineSettingsActivity : AppCompatActivity() {
                 }
                 prefs.nnuePath = dest.absolutePath
                 loadCurrentValues()
-                Toast.makeText(this@EngineSettingsActivity, "NNUE 已保存: ${dest.name}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@EngineSettingsActivity, "NNUE 已保存: ${dest.name}\n正在重新加载引擎...", Toast.LENGTH_SHORT).show()
+                reloadEngine()
             } catch (e: Exception) {
                 textEngineStatus.text = "导入 NNUE 失败: ${e.message}"
                 Toast.makeText(this@EngineSettingsActivity, "导入 NNUE 失败: ${e.message}", Toast.LENGTH_LONG).show()
@@ -340,7 +345,6 @@ class EngineSettingsActivity : AppCompatActivity() {
                 val enginePath = if (prefs.enginePath.isNotBlank() && java.io.File(prefs.enginePath).exists()) {
                     prefs.enginePath
                 } else {
-                    // 退回 assets 中部署的
                     app.resourceManager.deployAssets().enginePath
                         ?: run {
                             textEngineStatus.text = "没有可用引擎（assets 也未打包）"
@@ -368,7 +372,21 @@ class EngineSettingsActivity : AppCompatActivity() {
                     // 记住本次成功路径，避免下次重新查 assets
                     prefs.enginePath = enginePath
                     if (nnuePath != null) prefs.nnuePath = nnuePath
-                    Toast.makeText(this@EngineSettingsActivity, "引擎已加载", Toast.LENGTH_SHORT).show()
+
+                    // 引擎加载成功 → 默认开启自动走子（电脑执黑方）
+                    app.gameManager.autoPlay = true
+                    app.gameManager.playAsRed = true
+
+                    // 如果当前轮到引擎方，立即让电脑走
+                    val currentTurn = app.gameManager.gameState.value.sideToMove
+                    if (app.gameManager.gameState.value.gameOver) {
+                        // 对局已结束 → 开新局让电脑自动走
+                        app.gameManager.newGame()
+                    } else if (currentTurn == com.qindachess.board.PieceColor.BLACK) {
+                        scope.launch { app.gameManager.makeAutoMove() }
+                    }
+
+                    Toast.makeText(this@EngineSettingsActivity, "引擎已加载 ✓", Toast.LENGTH_SHORT).show()
                 } else {
                     val err = app.engineManager.lastError ?: "未知错误"
                     textEngineStatus.text = "加载失败: $err"
