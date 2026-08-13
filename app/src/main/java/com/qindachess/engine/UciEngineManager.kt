@@ -194,6 +194,28 @@ class UciEngineManager {
     private fun tryStartProcess(enginePath: String): Process? {
         val file = java.io.File(enginePath)
 
+        // 🔥 关键：如果路径包含 /lib/ 且以 .so 结尾，那是 nativeLibraryDir 里的文件
+        // Android SELinux 唯一允许应用直接执行自己 ELF 的目录！直接尝试。
+        val isNativeLib = enginePath.contains("/lib/") && enginePath.endsWith(".so")
+        if (isNativeLib) {
+            Log.i(TAG, "🚀 检测到 nativeLibraryDir 路径，直接执行！$enginePath")
+            try {
+                val p = ProcessBuilder(enginePath).redirectErrorStream(true).directory(file.parentFile).start()
+                Thread.sleep(400)
+                if (p.isAlive) {
+                    Log.i(TAG, "✅ nativeLibraryDir 直接执行成功！PID=${p.hashCode()}")
+                    running = true
+                    return p
+                } else {
+                    val exit = try { p.exitValue() } catch (_: Exception) { -1 }
+                    Log.w(TAG, "nativeLibraryDir 引擎立即退出 exitCode=$exit，fallback 其他策略")
+                    p.destroy()
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "nativeLibraryDir 直接执行异常: ${e.message}，fallback 其他策略")
+            }
+        }
+
         data class Attempt(val label: String, val cmd: Array<String>)
 
         val attempts = mutableListOf<Attempt>()

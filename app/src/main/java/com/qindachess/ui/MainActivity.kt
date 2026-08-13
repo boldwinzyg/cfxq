@@ -614,11 +614,20 @@ class MainActivity : AppCompatActivity() {
         val app = application as QinDaApp
         val prefs = app.prefs
         return try {
-            val enginePath = if (prefs.enginePath.isNotBlank() && java.io.File(prefs.enginePath).exists()) {
-                prefs.enginePath
-            } else {
-                app.resourceManager.deployAssets().enginePath ?: return false
+            // 优先级 1：用户保存的路径（如果存在且可执行）
+            // 优先级 2：nativeLibraryDir 里的 libpikafish.so（Android 唯一允许应用执行自己 ELF 的路径！）
+            // 优先级 3：assets 部署到 codeCacheDir 的 pikafish（可能被 SELinux 拒绝）
+            val nativeLibDir = app.applicationInfo.nativeLibraryDir
+            val bundledSo = java.io.File(nativeLibDir, "libpikafish.so")
+            Log.i(TAG, "nativeLibraryDir=$nativeLibDir, libpikafish.so exists=${bundledSo.exists()}, len=${bundledSo.length()}")
+
+            val enginePath = when {
+                prefs.enginePath.isNotBlank() && java.io.File(prefs.enginePath).exists() -> prefs.enginePath
+                bundledSo.exists() -> bundledSo.absolutePath
+                else -> app.resourceManager.deployAssets().enginePath ?: return false
             }
+            Log.i(TAG, "最终选择引擎路径: $enginePath")
+
             val nnuePath = if (prefs.nnuePath.isNotBlank() && java.io.File(prefs.nnuePath).exists()) {
                 prefs.nnuePath
             } else {
