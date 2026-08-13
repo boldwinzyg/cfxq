@@ -1037,16 +1037,6 @@ class MainActivity : AppCompatActivity() {
             val moveDisplay = entry.first
             val moveUci = entry.second
             val scoreDisplay = entry.third
-            val winrate = 50 + (30 - idx * 3)
-            val wins = 1000 - idx * 10
-            val draws = 4 - idx
-            val losses = idx
-            val note = when (idx) {
-                0 -> "杀鱼刀"
-                1 -> "雨飞刀库"
-                2 -> "天规刀"
-                else -> ""
-            }
 
             val row = android.widget.LinearLayout(this).apply {
                 orientation = android.widget.LinearLayout.HORIZONTAL
@@ -1060,42 +1050,81 @@ class MainActivity : AppCompatActivity() {
                 text = moveDisplay
                 textSize = 15f
                 setTextColor(resources.getColor(R.color.move_text, theme))
-                layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f)
+                layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.2f)
             }
             val scoreCol = TextView(this).apply {
                 text = scoreDisplay
                 textSize = 15f
+                gravity = android.view.Gravity.END
                 setTextColor(resources.getColor(R.color.move_score, theme))
-                gravity = android.view.Gravity.END
                 layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 0.8f)
-            }
-            val winrateCol = TextView(this).apply {
-                text = "${winrate}%"
-                textSize = 14f
-                gravity = android.view.Gravity.END
-                setTextColor(resources.getColor(R.color.move_winrate, theme))
-                layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 0.7f)
-            }
-            val statsCol = TextView(this).apply {
-                text = "$wins/$draws/$losses"
-                textSize = 13f
-                gravity = android.view.Gravity.END
-                setTextColor(resources.getColor(R.color.move_stats, theme))
-                layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f)
-            }
-            val noteCol = TextView(this).apply {
-                text = note
-                textSize = 13f
-                gravity = android.view.Gravity.END
-                setTextColor(resources.getColor(R.color.move_note, theme))
-                layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f)
             }
 
             row.addView(moveCol)
             row.addView(scoreCol)
-            row.addView(winrateCol)
-            row.addView(statsCol)
-            row.addView(noteCol)
+
+            val isEngine = currentTab == TAB_ENGINE
+            val isBook = currentTab == TAB_BOOK
+            val isCloud = currentTab == TAB_RECORD
+
+            if (isBook) {
+                // 开局库：显示胜率 / 统计 / 注释
+                val winrate = 50 + (30 - idx * 3)
+                val wins = 1000 - idx * 10
+                val draws = 4 - idx
+                val losses = idx
+                val note = when (idx) {
+                    0 -> "杀鱼刀"
+                    1 -> "雨飞刀库"
+                    2 -> "天规刀"
+                    else -> ""
+                }
+
+                val winrateCol = TextView(this).apply {
+                    text = "${winrate}%"
+                    textSize = 14f
+                    gravity = android.view.Gravity.END
+                    setTextColor(resources.getColor(R.color.move_winrate, theme))
+                    layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 0.7f)
+                }
+                val statsCol = TextView(this).apply {
+                    text = "$wins/$draws/$losses"
+                    textSize = 13f
+                    gravity = android.view.Gravity.END
+                    setTextColor(resources.getColor(R.color.move_stats, theme))
+                    layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f)
+                }
+                val noteCol = TextView(this).apply {
+                    text = note
+                    textSize = 13f
+                    gravity = android.view.Gravity.END
+                    setTextColor(resources.getColor(R.color.move_note, theme))
+                    layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f)
+                }
+                row.addView(winrateCol)
+                row.addView(statsCol)
+                row.addView(noteCol)
+            } else if (isEngine) {
+                // 引擎分析：只显示走法 + 分数 + 排名（不显示胜率/统计）
+                val rankCol = TextView(this).apply {
+                    text = "#${idx + 1}"
+                    textSize = 14f
+                    gravity = android.view.Gravity.END
+                    setTextColor(resources.getColor(R.color.move_winrate, theme))
+                    layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f)
+                }
+                row.addView(rankCol)
+            } else if (isCloud) {
+                // 云库：显示频率
+                val freqCol = TextView(this).apply {
+                    text = scoreDisplay
+                    textSize = 14f
+                    gravity = android.view.Gravity.END
+                    setTextColor(resources.getColor(R.color.move_winrate, theme))
+                    layoutParams = android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f)
+                }
+                row.addView(freqCol)
+            }
 
             row.setOnClickListener {
                 val m = Move.fromUci(moveUci) ?: return@setOnClickListener

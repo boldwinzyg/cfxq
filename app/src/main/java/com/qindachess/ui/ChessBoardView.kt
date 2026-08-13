@@ -28,7 +28,6 @@ class ChessBoardView @JvmOverloads constructor(
 
     var onMoveListener: ((Move) -> Unit)? = null
     var onInvalidMoveListener: ((String) -> Unit)? = null
-    var isInteractive: Boolean = true
     var showCoordinates: Boolean = true
     var flipBoard: Boolean = false
 
@@ -87,6 +86,7 @@ class ChessBoardView @JvmOverloads constructor(
     init {
         isClickable = true
         isFocusable = true
+        isEnabled = true
         applySkin()
     }
 
@@ -736,11 +736,32 @@ class ChessBoardView @JvmOverloads constructor(
         return Position(origRow, origCol)
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (!isInteractive) return false
+    private var _interactiveTouch: Boolean = true
+    var isInteractive: Boolean
+        get() = _interactiveTouch
+        set(value) {
+            _interactiveTouch = value
+            Log.d("ChessBoardView", "isInteractive set to $value")
+        }
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        val action = when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> "DOWN"
+            MotionEvent.ACTION_MOVE -> "MOVE"
+            MotionEvent.ACTION_UP -> "UP"
+            MotionEvent.ACTION_CANCEL -> "CANCEL"
+            else -> "OTHER(${event.actionMasked})"
+        }
+        Log.d("ChessBoardView", "📍 dispatchTouchEvent: $action at (${event.x},${event.y}) interactive=$isInteractive w=$width h=$height cellW=$cellW cellH=$cellH")
+
+        if (!isInteractive) {
+            return super.dispatchTouchEvent(event)
+        }
+
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 currentPointerPos = fromScreen(event.x, event.y)
+                Log.d("ChessBoardView", "📌 DOWN pos=$currentPointerPos")
             }
             MotionEvent.ACTION_MOVE -> {
                 currentPointerPos = fromScreen(event.x, event.y)
@@ -749,10 +770,9 @@ class ChessBoardView @JvmOverloads constructor(
                 val downPos = currentPointerPos
                 val upPos = fromScreen(event.x, event.y)
                 currentPointerPos = null
-                // 只有 DOWN 和 UP 在同一个格子才算一次有效点击
-                // （避免手指滑过多个格子导致误触）
+                Log.d("ChessBoardView", "📌 UP down=$downPos up=$upPos")
                 if (downPos != null && upPos != null && downPos.row == upPos.row && downPos.col == upPos.col) {
-                    Log.d("ChessBoardView", "tap detected at $upPos")
+                    Log.d("ChessBoardView", "✅🎯 tap detected → handleTouch($upPos)")
                     handleTouch(upPos)
                 }
             }
@@ -760,6 +780,15 @@ class ChessBoardView @JvmOverloads constructor(
                 currentPointerPos = null
             }
         }
+
+        // 必须返回 true 消费事件链，否则后续 DOWN-UP 对可能不完整
+        return true
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        // 触摸逻辑已经在 dispatchTouchEvent 里处理了
+        // 这里返回 true 是为了保证某些老版本 Android 的事件链完整性
+        Log.d("ChessBoardView", "onTouchEvent hit (should rarely happen now)")
         return true
     }
 

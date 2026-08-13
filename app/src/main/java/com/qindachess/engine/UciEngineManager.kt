@@ -514,6 +514,9 @@ class UciEngineManager {
         process = null
         inputWriter = null
         outputReader = null
+        // 🎯 关键：清掉残留的引擎输出行，防止下次 loadEngine 时协议握手混乱
+        synchronized(responseLock) { pendingResponses.clear() }
+        engineBanner.clear()
     }
 
     fun stopEngine() {
