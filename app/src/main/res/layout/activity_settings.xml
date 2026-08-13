@@ -90,6 +90,134 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="引擎可执行文件路径（留空则使用内置）"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/dark_text" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/textEnginePath"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="（未设置）"
+                android:textSize="12sp"
+                android:textColor="@color/info_text"
+                android:singleLine="true"
+                android:ellipsize="middle"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
+                android:padding="6dp" />
+
+            <Button
+                android:id="@+id/btnChooseEngine"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="选择"
+                android:textSize="12sp"
+                android:minHeight="36dp"
+                android:paddingHorizontal="12dp" />
+
+            <Button
+                android:id="@+id/btnClearEngine"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="清除"
+                android:textSize="12sp"
+                android:minHeight="36dp"
+                android:paddingHorizontal="12dp"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="（提示：点击路径框 或 [选择] 按钮均可更换引擎；点 [清除] 恢复内置）"
+            android:textSize="11sp"
+            android:textColor="#888888"
+            android:layout_marginTop="2dp" />
+
+        <TextView
+            android:id="@+id/textEngineStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="引擎状态:未知"
+            android:textSize="12sp"
+            android:textColor="@color/info_text"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="NNUE 评估文件（可选）"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/dark_text" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/textNnuePath"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="（未设置）"
+                android:textSize="12sp"
+                android:textColor="@color/info_text"
+                android:singleLine="true"
+                android:ellipsize="middle"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
+                android:padding="6dp" />
+
+            <Button
+                android:id="@+id/btnChooseNnue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="选择"
+                android:textSize="12sp"
+                android:minHeight="36dp"
+                android:paddingHorizontal="12dp" />
+
+            <Button
+                android:id="@+id/btnClearNnue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="清除"
+                android:textSize="12sp"
+                android:minHeight="36dp"
+                android:paddingHorizontal="12dp"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnReloadEngine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="重新加载引擎"
+            android:layout_marginTop="12dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/divider"
+            android:layout_marginVertical="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:text="思考深度"
             android:textSize="14sp"
             android:layout_marginTop="12dp"

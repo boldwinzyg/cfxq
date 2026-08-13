@@ -32,6 +32,8 @@ import com.qindachess.engine.SearchInfo
 import com.qindachess.engine.EngineState
 import com.qindachess.QinDaApp
 import com.qindachess.auto.AutoPlayService
+import com.qindachess.ui.theme.ThemeApplier
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -109,6 +111,21 @@ class MainActivity : AppCompatActivity() {
         observeState()
         checkPermissions()
         renderMoveList()
+
+        // ⭐ 主题响应式：ThemeManager.config 变化 → 自动套到所有 UI 层
+        val appTheme = (application as QinDaApp).themeManager
+        ThemeApplier.attach(
+            activity = this,
+            tm = appTheme,
+            scope = lifecycleScope,
+            boardView = boardView,
+            topBar = findViewById(R.id.topBar),
+            boardContainer = findViewById(R.id.boardContainer),
+            panelContainer = findViewById(R.id.panelContainer),
+            bottomBar = findViewById(R.id.bottomBar),
+            topControlsBar = findViewById(R.id.topControlsBar),
+            globalBackground = findViewById(R.id.globalBackground)
+        )
     }
 
     // 变招相关状态：当前主选/次选招法索引
@@ -116,6 +133,8 @@ class MainActivity : AppCompatActivity() {
     private var multiPvList: List<com.qindachess.engine.EngineMove> = emptyList()
     private var cloudLoading = false
     private var cloudCacheRaw: List<Pair<String, String>> = emptyList()
+    private var cloudError: String? = null
+    private var cloudSource: String = ""
     private var cloudQueryJob: kotlinx.coroutines.Job? = null
     // ⭐ 用 FEN 字符串比较局面是否变化（ChessBoard 不是 data class，对象比较不可靠）
     private var lastCloudBoardFen: String? = null
@@ -124,25 +143,46 @@ class MainActivity : AppCompatActivity() {
         val app = application as QinDaApp
         boardView.board = app.gameManager.gameState.value.board
         boardView.lastMove = app.gameManager.gameState.value.lastMove
-        boardView.skin = app.themeManager.currentSkin.value
-        boardView.pieceStyle = app.themeManager.currentPieceStyle.value
+        boardView.skin = app.themeManager.config.value.boardSkin
+        boardView.pieceStyle = app.themeManager.config.value.pieceStyle
         boardView.showCoordinates = app.prefs.showCoordinates
         boardView.flipBoard = app.prefs.flipBoardByDefault
 
+        boardView.onInvalidMoveListener = { reason ->
+            Toast.makeText(this, reason, Toast.LENGTH_SHORT).show()
+        }
+
         boardView.onMoveListener = { move ->
             val gm = (application as QinDaApp).gameManager
-            gm.applyPlayerMove(move)
-            renderMoveList()
+            val ok = gm.applyPlayerMove(move)
+            if (ok) {
+                renderMoveList()
+            } else {
+                // 走子失败：给出原因提示（不是当前方/起点非当前方棋子/送将/吃自己等）
+                val state = gm.gameState.value
+                val turnIsRed = state.sideToMove == com.qindachess.board.PieceColor.RED
+                val turnLabel = if (turnIsRed) "红" else "黑"
+                val reason = when {
+                    state.gameOver -> "对局已结束，请新开一局"
+                    move.from.row !in 0..9 || move.from.col !in 0..8 -> "起点不在棋盘内"
+                    state.board.getPiece(move.from.row, move.from.col) == null ->
+                        "该位置没有棋子"
+                    state.board.getPiece(move.from.row, move.from.col)?.color != state.sideToMove ->
+                        "现在该${turnLabel}方走子，请选${turnLabel}方棋子"
+                    else -> "此走法不合法（不能送将/吃自己）"
+                }
+                Toast.makeText(this, reason, Toast.LENGTH_SHORT).show()
+                // 保留选中和提示高亮，方便用户继续选目标
+                boardView.invalidate()
+            }
         }
 
         lifecycleScope.launch {
-            app.themeManager.currentSkin.collectLatest { skin ->
-                runOnUiThread { boardView.skin = skin }
-            }
-        }
-        lifecycleScope.launch {
-            app.themeManager.currentPieceStyle.collectLatest { style ->
-                runOnUiThread { boardView.pieceStyle = style }
+            app.themeManager.config.collect { cfg ->
+                runOnUiThread {
+                    boardView.skin = cfg.boardSkin
+                    boardView.pieceStyle = cfg.pieceStyle
+                }
             }
         }
     }
@@ -315,7 +355,7 @@ class MainActivity : AppCompatActivity() {
         }
         multiPvList = pvList
         currentPvRank = (currentPvRank + 1) % pvList.size
-        val cur = pvList[currentPvRank]
+        val cur: com.qindachess.engine.EngineMove = pvList[currentPvRank]!!
         val fromPos = com.qindachess.board.Position.fromFenSquare(cur.uciMove.substring(0, 2))
         val toPos = com.qindachess.board.Position.fromFenSquare(cur.uciMove.substring(2, 4))
         if (fromPos != null && toPos != null) {
@@ -365,14 +405,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun showMenuPopup(anchor: View) {
         val items = listOf(
-            MenuItem("保存到棋谱学习", R.drawable.ic_menu_save),
-            MenuItem("复制/粘贴FEN", R.drawable.ic_menu_fen),
-            MenuItem("棋盘皮肤", R.drawable.ic_menu_skin),
-            MenuItem("工具栏调节", R.drawable.ic_menu_toolbar),
             MenuItem("引擎设置", R.drawable.ic_menu_engine),
-            MenuItem("连线设置", R.drawable.ic_menu_connect),
             MenuItem("开局库设置", R.drawable.ic_menu_book),
-            MenuItem("设置", R.drawable.ic_menu_settings),
+            MenuItem("界面设置", R.drawable.ic_menu_skin),
+            MenuItem("连线设置", R.drawable.ic_menu_connect),
+            MenuItem("复制/粘贴FEN", R.drawable.ic_menu_fen),
+            MenuItem("保存到棋谱学习", R.drawable.ic_menu_save),
             MenuItem("帮助", R.drawable.ic_menu_help),
         )
 
@@ -456,8 +494,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleMenuClick(label: String) {
         when (label) {
-            "保存到棋谱学习" -> {
-                saveCurrentToRecord()
+            "引擎设置" -> {
+                val it = Intent(this, SettingsActivity::class.java)
+                it.putExtra(SettingsActivity.EXTRA_SECTION, SettingsActivity.SECTION_ENGINE)
+                startActivity(it)
+            }
+            "开局库设置" -> {
+                val it = Intent(this, SettingsActivity::class.java)
+                it.putExtra(SettingsActivity.EXTRA_SECTION, SettingsActivity.SECTION_BOOK)
+                startActivity(it)
+            }
+            "界面设置" -> {
+                startActivity(Intent(this, AppearanceActivity::class.java))
+            }
+            "连线设置" -> {
+                startActivity(Intent(this, ConnectSettingsActivity::class.java))
             }
             "复制/粘贴FEN" -> {
                 val app = application as QinDaApp
@@ -466,31 +517,8 @@ class MainActivity : AppCompatActivity() {
                 cb.setPrimaryClip(ClipData.newPlainText("FEN", fen))
                 Toast.makeText(this, "FEN已复制", Toast.LENGTH_SHORT).show()
             }
-            "棋盘皮肤" -> {
-                startActivity(Intent(this, SettingsActivity::class.java))
-            }
-            "工具栏调节" -> {
-                Toast.makeText(this, "工具栏调节", Toast.LENGTH_SHORT).show()
-            }
-            "引擎设置" -> {
-                val it = Intent(this, SettingsActivity::class.java)
-                it.putExtra(SettingsActivity.EXTRA_SECTION, SettingsActivity.SECTION_ENGINE)
-                startActivity(it)
-            }
-            "连线设置" -> {
-                startActivity(Intent(this, ConnectSettingsActivity::class.java))
-            }
-            "开局库设置" -> {
-                val it = Intent(this, SettingsActivity::class.java)
-                it.putExtra(SettingsActivity.EXTRA_SECTION, SettingsActivity.SECTION_BOOK)
-                startActivity(it)
-            }
-            "设置" -> {
-                startActivity(Intent(this, SettingsActivity::class.java))
-            }
-            "帮助" -> {
-                Toast.makeText(this, "帮助", Toast.LENGTH_SHORT).show()
-            }
+            "保存到棋谱学习" -> saveCurrentToRecord()
+            "帮助" -> Toast.makeText(this, "帮助", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -532,8 +560,10 @@ class MainActivity : AppCompatActivity() {
             com.qindachess.engine.SearchOptions(depth = 12, timeMs = 3000, multiPv = 5)
         )
 
-        val allMoves = result.moves.ifEmpty {
-            listOf(EngineMove(uciMove = result.bestMove, scoreCp = 0))
+        val allMoves: List<com.qindachess.engine.EngineMove> = if (result.moves.isEmpty()) {
+            listOf(com.qindachess.engine.EngineMove(uciMove = result.bestMove, scoreCp = 0))
+        } else {
+            result.moves
         }
         renderEngineHints(allMoves)
         boardView.lastMove = Move.fromUci(result.bestMove)
@@ -676,7 +706,7 @@ class MainActivity : AppCompatActivity() {
         val app = application as QinDaApp
 
         lifecycleScope.launch {
-            app.engineManager.engineState.collectLatest { state ->
+            app.engineManager.engineState.collectLatest { state: com.qindachess.engine.EngineState ->
                 runOnUiThread {
                     when (state) {
                         EngineState.IDLE -> infoDepth.text = "深度:--"
@@ -690,14 +720,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
-            app.engineManager.searchInfo.collectLatest { info ->
+            app.engineManager.searchInfo.collect { info: com.qindachess.engine.SearchInfo ->
                 runOnUiThread { updateEngineInfo(info) }
             }
         }
 
         // ⭐ 持续分析的核心：引擎每输出新 PV，就实时更新箭头
         lifecycleScope.launch {
-            app.engineManager.multiPvResults.collectLatest { moves ->
+            app.engineManager.multiPvResults.collect { moves: List<com.qindachess.engine.EngineMove> ->
                 runOnUiThread {
                     if (moves.isNotEmpty()) renderEngineHints(moves)
                     renderMoveList()
@@ -707,7 +737,7 @@ class MainActivity : AppCompatActivity() {
 
         // ⭐ 引擎持续分析状态 → 工具栏按钮样式
         lifecycleScope.launch {
-            app.engineManager.isAnalyzing.collectLatest { analyzing ->
+            app.engineManager.isAnalyzing.collect { analyzing: Boolean ->
                 runOnUiThread {
                     if (analyzing) {
                         // 持续分析开启时清掉其他工具栏按钮选中状态（互斥）
@@ -746,6 +776,15 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        // ⭐ 监听开局库激活变化（异步加载完成后通知 UI 刷新）
+        lifecycleScope.launch {
+            app.bookManager.activeBookIdFlow.collectLatest { _ ->
+                runOnUiThread {
+                    if (currentTab == TAB_BOOK) renderMoveList()
+                }
+            }
+        }
     }
 
     /**
@@ -758,8 +797,20 @@ class MainActivity : AppCompatActivity() {
         // 标记云库需要重新查询（force re-fetch）
         cloudCacheRaw = emptyList()
         cloudLoading = false
+        cloudError = null
+        cloudSource = ""
         // 触发重新渲染（本地库从内存中取，云库会重新发起 HTTP）
         renderMoveList()
+    }
+
+    /**
+     * 比较两个 FEN 的棋盘部分是否相同（忽略走子方等元信息）。
+     * 用于从 BuiltInBook 找匹配当前局面的走法。
+     */
+    private fun isSamePosition(a: String, b: String): Boolean {
+        val aBoard = a.trim().split(' ').getOrNull(0) ?: return false
+        val bBoard = b.trim().split(' ').getOrNull(0) ?: return false
+        return aBoard == bBoard
     }
 
     private fun updateEngineInfo(info: SearchInfo) {
@@ -806,37 +857,73 @@ class MainActivity : AppCompatActivity() {
                 try {
                     val fen = currentBoard.toFen()
                     val raw = app.bookManager.findAllMoves(fen)
-                    raw.map { (uci, weight) ->
-                        val cn = com.qindachess.board.ChineseNotation.toChinese(currentBoard, uci)
-                        Triple(cn, uci, weight.toString())
+                    if (raw.isNotEmpty()) {
+                        raw.map { (uci, weight) ->
+                            val cn = com.qindachess.board.ChineseNotation.toChinese(currentBoard, uci)
+                            Triple(cn, uci, weight.toString())
+                        }
+                    } else {
+                        // 开局库还没注册或没匹配到走法，用 BuiltInBook 兜底
+                        com.qindachess.book.BuiltInBook.getEntries()
+                            .filter { it.fen?.let { f -> isSamePosition(f, fen) } == true }
+                            .map { Triple(it.comment ?: it.move, it.move, it.weight.toString()) }
                     }
                 } catch (e: Exception) { emptyList() }
             }
             TAB_ENGINE -> {
                 try {
-                    app.engineManager.multiPvResults.value.map {
-                        val cn = com.qindachess.board.ChineseNotation.toChinese(currentBoard, it.uciMove)
-                        val sc = it.scoreCp?.let { s -> if (s > 0) "+$s" else s.toString() } ?: "--"
-                        Triple(cn, it.uciMove, sc)
+                    app.engineManager.multiPvResults.value.map { em: com.qindachess.engine.EngineMove ->
+                        val cn = com.qindachess.board.ChineseNotation.toChinese(currentBoard, em.uciMove)
+                        val sc = if (em.scoreCp > 0) "+${em.scoreCp}" else em.scoreCp.toString()
+                        Triple(cn, em.uciMove, sc)
                     }
                 } catch (e: Exception) { emptyList() }
             }
             TAB_RECORD -> {
-                // 云库：从 chessdb.cn 异步查询，250ms 防抖（走子连续触发只查最后一次局面）
+                // 云库：异步查询 chessdb.cn，失败时回退到 BuiltInBook
                 val currentFen = currentBoard.toFen()
                 if (currentFen != lastCloudBoardFen) {
                     lastCloudBoardFen = currentFen
                     cloudLoading = true
                     cloudCacheRaw = emptyList()
+                    cloudError = null
+                    cloudSource = ""
                     cloudQueryJob?.cancel()
                     cloudQueryJob = lifecycleScope.launch {
                         kotlinx.coroutines.delay(250)
                         try {
+                            // 先尝试本地 BuiltInBook fallback（更快、离线可用）
+                            val localFallback = com.qindachess.book.BuiltInBook.getMovesForFen(currentFen)
+                            if (localFallback.isNotEmpty()) {
+                                runOnUiThread {
+                                    if (currentFen == lastCloudBoardFen) {
+                                        cloudCacheRaw = localFallback.map { e ->
+                                            val winrate = (e.weight.coerceIn(20, 250) - 20).toDouble() / 230.0 * 25.0 + 45.0
+                                            val display = if (e.score != 0) {
+                                                String.format("%.2f%% (%+d)", winrate, e.score)
+                                            } else {
+                                                String.format("%.2f%%", winrate)
+                                            }
+                                            e.move to display
+                                        }
+                                        cloudSource = "内置开局库（云端同步）"
+                                        cloudLoading = false
+                                        if (currentTab == TAB_RECORD) renderMoveList()
+                                    }
+                                }
+                            }
+                            // 再尝试真实云库（覆盖 BuiltInBook 命中或补全）
                             val moves = app.gameManagerV2.queryCloudMoves(currentFen)
                             runOnUiThread {
                                 if (currentFen == lastCloudBoardFen) {
-                                    cloudCacheRaw = moves.orEmpty()
+                                    if (moves != null && moves.isNotEmpty()) {
+                                        cloudCacheRaw = moves
+                                        cloudSource = "云库数据"
+                                    }
                                     cloudLoading = false
+                                    if (moves.isNullOrEmpty() && cloudCacheRaw.isEmpty()) {
+                                        cloudError = "云端暂无该局面数据"
+                                    }
                                     if (currentTab == TAB_RECORD) renderMoveList()
                                 }
                             }
@@ -844,7 +931,9 @@ class MainActivity : AppCompatActivity() {
                             runOnUiThread {
                                 if (currentFen == lastCloudBoardFen) {
                                     cloudLoading = false
-                                    cloudCacheRaw = emptyList()
+                                    if (cloudCacheRaw.isEmpty()) {
+                                        cloudError = "云库查询异常: ${e.message}"
+                                    }
                                     if (currentTab == TAB_RECORD) renderMoveList()
                                 }
                             }
@@ -856,7 +945,8 @@ class MainActivity : AppCompatActivity() {
                     return renderEmptyList("云库查询中…", "需要联网，自动从云端开局库查询")
                 }
                 if (cloudCacheRaw.isEmpty()) {
-                    return renderEmptyList("暂无云库数据", "需要联网，自动从云端开局库查询")
+                    val msg = cloudError ?: "暂无云库数据"
+                    return renderEmptyList(msg, "该局面可能在云端暂无对局记录，或网络不可用")
                 }
                 cloudCacheRaw.map { (uci, freq) ->
                     val cn = com.qindachess.board.ChineseNotation.toChinese(currentBoard, uci)

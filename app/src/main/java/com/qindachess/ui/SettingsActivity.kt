@@ -12,6 +12,7 @@ import com.qindachess.QinDaApp
 import com.qindachess.book.BookManager
 import com.qindachess.book.CloudBookManager
 import com.qindachess.engine.EngineConfig
+import com.qindachess.engine.EngineState
 import com.qindachess.engine.GameConfig
 import com.qindachess.engine.GameManagerV2
 import com.qindachess.engine.BookConfig
@@ -72,10 +73,36 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var btnApplyAll: Button
     private lateinit var btnResetAll: Button
 
+    private lateinit var textEnginePath: TextView
+    private lateinit var textNnuePath: TextView
+    private lateinit var textEngineStatus: TextView
+    private lateinit var btnChooseEngine: Button
+    private lateinit var btnClearEngine: Button
+    private lateinit var btnChooseNnue: Button
+    private lateinit var btnClearNnue: Button
+    private lateinit var btnReloadEngine: Button
+
     private val bookPicker = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         uri?.let { importBookFile(it) }
+    }
+
+    /**
+     * 引擎文件选择器：
+     * - 通过 OpenDocument 让用户选 .so / pikafish / yukfish 等可执行
+     * - 复制到 app 私有目录（绕过 SAF 权限），由 engineManager 读取
+     */
+    private val enginePicker = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let { importEngineFile(it) }
+    }
+
+    private val nnuePicker = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let { importNnueFile(it) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -128,6 +155,15 @@ class SettingsActivity : AppCompatActivity() {
         btnDownloadCloudBook = findViewById(R.id.btnDownloadCloudBook)
         btnApplyAll = findViewById(R.id.btnApplyAll)
         btnResetAll = findViewById(R.id.btnResetAll)
+
+        textEnginePath = findViewById(R.id.textEnginePath)
+        textNnuePath = findViewById(R.id.textNnuePath)
+        textEngineStatus = findViewById(R.id.textEngineStatus)
+        btnChooseEngine = findViewById(R.id.btnChooseEngine)
+        btnClearEngine = findViewById(R.id.btnClearEngine)
+        btnChooseNnue = findViewById(R.id.btnChooseNnue)
+        btnClearNnue = findViewById(R.id.btnClearNnue)
+        btnReloadEngine = findViewById(R.id.btnReloadEngine)
     }
 
     private fun setupSpinners() {
@@ -289,6 +325,40 @@ class SettingsActivity : AppCompatActivity() {
             loadCurrentValues()
             Toast.makeText(this, "已恢复默认设置", Toast.LENGTH_SHORT).show()
         }
+
+        // === 引擎路径相关 ===
+        // 路径文本本身可点击，等价于"选择"按钮
+        textEnginePath.setOnClickListener {
+            enginePicker.launch(arrayOf("*/*", "application/octet-stream"))
+        }
+        textNnuePath.setOnClickListener {
+            nnuePicker.launch(arrayOf("*/*", "application/octet-stream"))
+        }
+
+        btnChooseEngine.setOnClickListener {
+            // 接受所有文件类型（.so / pikafish / yukfish / elf 等）
+            enginePicker.launch(arrayOf("*/*", "application/octet-stream"))
+        }
+
+        btnClearEngine.setOnClickListener {
+            prefs.enginePath = ""
+            loadCurrentValues()
+            Toast.makeText(this, "已清除引擎路径，将使用内置引擎", Toast.LENGTH_SHORT).show()
+        }
+
+        btnChooseNnue.setOnClickListener {
+            nnuePicker.launch(arrayOf("*/*", "application/octet-stream"))
+        }
+
+        btnClearNnue.setOnClickListener {
+            prefs.nnuePath = ""
+            loadCurrentValues()
+            Toast.makeText(this, "已清除 NNUE 路径", Toast.LENGTH_SHORT).show()
+        }
+
+        btnReloadEngine.setOnClickListener {
+            reloadEngine()
+        }
     }
 
     private fun loadCurrentValues() {
@@ -329,7 +399,39 @@ class SettingsActivity : AppCompatActivity() {
         seekMinBookWeight.progress = prefs.minBookWeight.coerceIn(0, 100)
         textMinBookWeightValue.text = "≥ ${seekMinBookWeight.progress} 权重"
 
+        // 引擎路径显示（加可点击的视觉提示）
+        val enginePathDisplay = if (prefs.enginePath.isNotBlank()) {
+            "📁 ${prefs.enginePath}"
+        } else {
+            "（未设置，将使用 assets 内置引擎）"
+        }
+        textEnginePath.text = enginePathDisplay
+        val nnuePathDisplay = if (prefs.nnuePath.isNotBlank()) {
+            "📁 ${prefs.nnuePath}"
+        } else {
+            "（未设置，将使用 assets 内置 NNUE）"
+        }
+        textNnuePath.text = nnuePathDisplay
+        updateEngineStatus()
+
         updateBookStatus()
+    }
+
+    /**
+     * 显示当前引擎的实时状态（IDLE / READY / ERROR 等）
+     */
+    private fun updateEngineStatus() {
+        val app = application as QinDaApp
+        val state = app.engineManager.engineState.value
+        val ready = app.engineManager.isReady()
+        val label = when {
+            ready -> "引擎就绪 ✓"
+            state == EngineState.STARTING -> "引擎启动中..."
+            state == EngineState.SEARCHING -> "引擎思考中..."
+            state == EngineState.ERROR -> "引擎错误 ✗（请检查路径/文件/可执行权限）"
+            else -> "引擎未加载（请设置引擎路径或点重新加载）"
+        }
+        textEngineStatus.text = label
     }
 
     private fun updateBookStatus() {
@@ -433,5 +535,105 @@ class SettingsActivity : AppCompatActivity() {
         themeManager.setPieceStyle(prefs.pieceStyleId)
 
         app.engineManager.applySearchOptions(engineConfig.toSearchOptions())
+    }
+
+    /**
+     * 导入用户选择的引擎文件。
+     * 关键点：
+     * - 复制到 filesDir/engines/，避开 SAF 权限，让 engineManager 用 ProcessBuilder 直接启动
+     * - 赋可执行权限
+     * - 保存路径到 AppPreferences
+     */
+    private fun importEngineFile(uri: Uri) {
+        scope.launch {
+            textEngineStatus.text = "正在导入引擎..."
+            try {
+                val name = FileUtils.getFileName(this@SettingsActivity, uri) ?: "user_engine.so"
+                val dir = java.io.File(filesDir, "engines").apply { mkdirs() }
+                val dest = java.io.File(dir, name)
+                contentResolver.openInputStream(uri)?.use { input ->
+                    java.io.FileOutputStream(dest).use { output -> input.copyTo(output) }
+                }
+                dest.setExecutable(true, false)
+                prefs.enginePath = dest.absolutePath
+                loadCurrentValues()
+                Toast.makeText(this@SettingsActivity, "引擎已保存: ${dest.name}", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                textEngineStatus.text = "导入失败: ${e.message}"
+                Toast.makeText(this@SettingsActivity, "导入引擎失败: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun importNnueFile(uri: Uri) {
+        scope.launch {
+            textEngineStatus.text = "正在导入 NNUE..."
+            try {
+                val name = FileUtils.getFileName(this@SettingsActivity, uri) ?: "user_nnue.nnue"
+                val dir = java.io.File(filesDir, "nnue").apply { mkdirs() }
+                val dest = java.io.File(dir, name)
+                contentResolver.openInputStream(uri)?.use { input ->
+                    java.io.FileOutputStream(dest).use { output -> input.copyTo(output) }
+                }
+                prefs.nnuePath = dest.absolutePath
+                loadCurrentValues()
+                Toast.makeText(this@SettingsActivity, "NNUE 已保存: ${dest.name}", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                textEngineStatus.text = "导入 NNUE 失败: ${e.message}"
+                Toast.makeText(this@SettingsActivity, "导入 NNUE 失败: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    /**
+     * 重新加载引擎：优先用 AppPreferences 中已保存的路径，否则用 assets 中部署的。
+     */
+    private fun reloadEngine() {
+        textEngineStatus.text = "正在重新加载引擎..."
+        val app = application as QinDaApp
+        scope.launch {
+            try {
+                val enginePath = if (prefs.enginePath.isNotBlank() && java.io.File(prefs.enginePath).exists()) {
+                    prefs.enginePath
+                } else {
+                    // 退回 assets 中部署的
+                    app.resourceManager.deployAssets().enginePath
+                        ?: run {
+                            textEngineStatus.text = "没有可用引擎（assets 也未打包）"
+                            Toast.makeText(this@SettingsActivity, "未找到任何引擎，请先选择引擎文件", Toast.LENGTH_LONG).show()
+                            return@launch
+                        }
+                }
+                val nnuePath = if (prefs.nnuePath.isNotBlank() && java.io.File(prefs.nnuePath).exists()) {
+                    prefs.nnuePath
+                } else {
+                    app.resourceManager.deployAssets().nnuePath
+                }
+                val ok = app.engineManager.loadEngine(enginePath, nnuePath)
+                if (ok) {
+                    app.engineManager.applySearchOptions(
+                        com.qindachess.engine.SearchOptions(
+                            depth = prefs.searchDepth,
+                            timeMs = prefs.searchTimeMs,
+                            threads = prefs.threadCount,
+                            hashSize = prefs.hashSizeMb,
+                            multiPv = prefs.multiPv,
+                            useNnue = prefs.useNnue
+                        )
+                    )
+                    // 记住本次成功路径，避免下次重新查 assets
+                    prefs.enginePath = enginePath
+                    if (nnuePath != null) prefs.nnuePath = nnuePath
+                    Toast.makeText(this@SettingsActivity, "引擎已加载", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@SettingsActivity, "引擎加载失败", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                textEngineStatus.text = "加载异常: ${e.message}"
+                Toast.makeText(this@SettingsActivity, "加载异常: ${e.message}", Toast.LENGTH_LONG).show()
+            } finally {
+                updateEngineStatus()
+            }
+        }
     }
 }

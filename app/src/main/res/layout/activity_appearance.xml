@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5F5F5">
+
+    <!-- 标题条 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:background="#FFFFFF">
+
+        <Button
+            android:id="@+id/btnBack"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="← 返回"
+            android:textSize="13sp"
+            android:backgroundTint="#1976D2"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="界面设置"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#212121"
+            android:gravity="center"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/btnReset"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="恢复默认"
+            android:textSize="13sp"/>
+    </LinearLayout>
+
+    <!-- Tab 条（手动切换，不用 ViewPager2） -->
+    <LinearLayout
+        android:id="@+id/tabBar"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:orientation="horizontal"
+        android:background="#FFFFFF">
+
+        <TextView
+            android:id="@+id/tabStyle"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="全局风格"
+            android:textSize="15sp"
+            android:textColor="#1976D2"
+            android:textStyle="bold"
+            android:background="@drawable/bg_appearance_tab"/>
+
+        <TextView
+            android:id="@+id/tabBoard"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="棋盘"
+            android:textSize="15sp"
+            android:textColor="#757575"
+            android:background="@drawable/bg_appearance_tab"/>
+
+        <TextView
+            android:id="@+id/tabPiece"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="棋子"
+            android:textSize="15sp"
+            android:textColor="#757575"
+            android:background="@drawable/bg_appearance_tab"/>
+    </LinearLayout>
+
+    <!-- 内容区：三个 FrameLayout 叠在一起，通过 visibility 切换 -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <!-- ──── Tab 1：全局风格 ──── -->
+        <ScrollView
+            android:id="@+id/pageStyle"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <!-- 预置主题 -->
+                <TextView android:text="预置主题"
+                    android:textSize="15sp" android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:layout_marginTop="4dp" android:layout_marginBottom="8dp"/>
+
+                <GridView android:id="@+id/gridThemes"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:numColumns="4"
+                    android:horizontalSpacing="6dp" android:verticalSpacing="8dp"/>
+
+                <!-- 全局背景图 -->
+                <TextView android:text="全局背景图"
+                    android:textSize="15sp" android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:layout_marginTop="16dp" android:layout_marginBottom="8dp"/>
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical"
+                    android:background="#FFFFFF" android:padding="10dp">
+
+                    <TextView android:id="@+id/textBgStatus"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="未设置" android:textSize="12sp"
+                        android:textColor="#666666"
+                        android:singleLine="true" android:ellipsize="middle"/>
+
+                    <Button android:id="@+id/btnPickBg"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="选择" android:textSize="12sp"/>
+
+                    <Button android:id="@+id/btnClearBg"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="清除" android:textSize="12sp"
+                        android:layout_marginStart="6dp"/>
+                </LinearLayout>
+
+                <TextView android:text="背景图会铺满整个页面，与透明度滑杆搭配可得到最佳效果"
+                    android:textSize="11sp" android:textColor="#999999"
+                    android:layout_marginTop="4dp" android:layout_marginBottom="4dp"/>
+
+                <!-- 透明度滑杆 -->
+                <TextView android:text="区域透明度"
+                    android:textSize="15sp" android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:layout_marginTop="16dp" android:layout_marginBottom="8dp"/>
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical"
+                    android:paddingVertical="2dp">
+                    <TextView android:text="顶栏" android:layout_width="58dp"
+                        android:textSize="13sp" android:textColor="#333333"/>
+                    <SeekBar android:id="@+id/slideTopBar"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:max="100" android:progress="100"/>
+                    <TextView android:id="@+id/lblTopBar"
+                        android:layout_width="38dp" android:textSize="12sp"
+                        android:textColor="#555555" android:gravity="end"/>
+                </LinearLayout>
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical"
+                    android:paddingVertical="2dp">
+                    <TextView android:text="棋盘" android:layout_width="58dp"
+                        android:textSize="13sp" android:textColor="#333333"/>
+                    <SeekBar android:id="@+id/slideBoard"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:max="100" android:progress="100"/>
+                    <TextView android:id="@+id/lblBoard"
+                        android:layout_width="38dp" android:textSize="12sp"
+                        android:textColor="#555555" android:gravity="end"/>
+                </LinearLayout>
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical"
+                    android:paddingVertical="2dp">
+                    <TextView android:text="面板" android:layout_width="58dp"
+                        android:textSize="13sp" android:textColor="#333333"/>
+                    <SeekBar android:id="@+id/slidePanel"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:max="100" android:progress="100"/>
+                    <TextView android:id="@+id/lblPanel"
+                        android:layout_width="38dp" android:textSize="12sp"
+                        android:textColor="#555555" android:gravity="end"/>
+                </LinearLayout>
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical"
+                    android:paddingVertical="2dp">
+                    <TextView android:text="底栏" android:layout_width="58dp"
+                        android:textSize="13sp" android:textColor="#333333"/>
+                    <SeekBar android:id="@+id/slideBottom"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:max="100" android:progress="100"/>
+                    <TextView android:id="@+id/lblBottom"
+                        android:layout_width="38dp" android:textSize="12sp"
+                        android:textColor="#555555" android:gravity="end"/>
+                </LinearLayout>
+
+                <TextView android:text="拖动滑杆，透明度越低越能透出下方的背景图"
+                    android:textSize="11sp" android:textColor="#999999"
+                    android:layout_marginTop="2dp"/>
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- ──── Tab 2：棋盘（皮肤） ──── -->
+        <ScrollView
+            android:id="@+id/pageBoard"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView android:text="棋盘皮肤"
+                    android:textSize="15sp" android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView android:text="不同的配色方案，选择你喜欢的风格"
+                    android:textSize="12sp" android:textColor="#999999"
+                    android:layout_marginBottom="12dp"/>
+
+                <GridView android:id="@+id/gridSkins"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:numColumns="3"
+                    android:horizontalSpacing="8dp" android:verticalSpacing="10dp"/>
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- ──── Tab 3：棋子 ──── -->
+        <ScrollView
+            android:id="@+id/pagePiece"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView android:text="棋子样式"
+                    android:textSize="15sp" android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView android:text="3D 浮雕最接近真实象棋；鎏金浮雕华丽大气"
+                    android:textSize="12sp" android:textColor="#999999"
+                    android:layout_marginBottom="12dp"/>
+
+                <GridView android:id="@+id/gridPieces"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:numColumns="3"
+                    android:horizontalSpacing="10dp" android:verticalSpacing="12dp"/>
+            </LinearLayout>
+        </ScrollView>
+
+    </FrameLayout>
+</LinearLayout>

@@ -68,8 +68,8 @@ class NotationFragment : Fragment() {
         annotateInput = view.findViewById(R.id.notationAnnotationInput)
 
         val app = requireActivity().application as QinDaApp
-        boardView.skin = app.themeManager.currentSkin.value
-        boardView.pieceStyle = app.themeManager.currentPieceStyle.value
+        boardView.skin = app.themeManager.config.value.boardSkin
+        boardView.pieceStyle = app.themeManager.config.value.pieceStyle
 
         setupBoardListener()
         setupButtons()

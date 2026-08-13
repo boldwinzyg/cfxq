@@ -2,6 +2,9 @@ package com.qindachess.book
 
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
@@ -86,6 +89,13 @@ class BookManager private constructor() {
     private val loadedBooks = mutableMapOf<String, IOpeningBook>()
     private var activeBookId: String? = null
 
+    /**
+     * activeBook 变化时通知 UI 刷新。GameManager 创建时 activeBook 可能为 null
+     * （assets 异步部署中），需要等 registerBuiltInBook 后才更新。
+     */
+    private val _activeBookFlow = MutableStateFlow<String?>(null)
+    val activeBookIdFlow: StateFlow<String?> = _activeBookFlow.asStateFlow()
+
     val activeBook: IOpeningBook?
         get() = activeBookId?.let { loadedBooks[it] }
 
@@ -93,10 +103,23 @@ class BookManager private constructor() {
         get() = activeBookId?.let { localBooks[it] }
 
     fun registerBuiltInBook(name: String, description: String, path: String): BookInfo? {
+        // 空路径直接走兜底（调用方主动放弃 assets 库）
+        if (path.isBlank()) {
+            return registerFallbackBook(name, description)
+        }
         val file = File(path)
-        if (!file.exists() || file.length() < 4) return null
+        // 48 字节的占位符 / < 1KB 的文件 / 损坏的 bin 都视为"无效"，直接走 BuiltInBook 兜底
+        if (!file.exists() || file.length() < 1024) {
+            Log.w(TAG, "Built-in book file too small or missing: $path (${file.length()}B), using BuiltInBook")
+            return registerFallbackBook(name, description)
+        }
 
-        val book = loadBookAuto(path) ?: return null
+        val book = loadBookAuto(path)
+        if (book == null || !book.isLoaded() || book.entryCount() == 0) {
+            Log.w(TAG, "Built-in book load failed or empty: $path, using BuiltInBook")
+            return registerFallbackBook(name, description)
+        }
+
         val info = BookInfo(
             id = "builtin_${name.hashCode().toString(16)}",
             name = name, description = description, path = path,
@@ -106,8 +129,45 @@ class BookManager private constructor() {
         )
         localBooks[info.id] = info
         loadedBooks[info.id] = book
-        if (activeBookId == null) activeBookId = info.id
-        Log.i(TAG, "✅ Built-in book registered: $name (${info.format}, ${info.entryCount} entries)")
+        if (activeBookId == null) {
+            activeBookId = info.id
+            _activeBookFlow.value = info.id
+            Log.i(TAG, "✅ 默认激活开局库: ${info.name} (${info.format}, ${info.entryCount} entries)")
+        }
+        Log.i(TAG, "Built-in book registered: $name (${info.format}, ${info.entryCount} entries)")
+        return info
+    }
+
+    /**
+     * 当 assets 中没有可用开局库时使用内置兜底开局库（BuiltInBook）。
+     * 这样保证开局库 Tab 永远有招法可显示。
+     */
+    private fun registerFallbackBook(name: String, description: String): BookInfo? {
+        val book = UcciTextBook().apply {
+            appendEntries(BuiltInBook.getEntries())
+        }
+        if (!book.isLoaded()) {
+            Log.e(TAG, "Even BuiltInBook is empty!")
+            return null
+        }
+        val info = BookInfo(
+            id = "builtin_fallback",
+            name = name + "（兜底）",
+            description = description + " - 内置兜底开局库",
+            path = "",
+            entryCount = book.entryCount(),
+            isDefault = true,
+            isBuiltIn = true,
+            fileSizeBytes = 0,
+            format = BookFormat.UCCI_TEXT
+        )
+        localBooks[info.id] = info
+        loadedBooks[info.id] = book
+        if (activeBookId == null) {
+            activeBookId = info.id
+            _activeBookFlow.value = info.id
+            Log.i(TAG, "✅ 兜底开局库已激活 (${book.entryCount()} entries)")
+        }
         return info
     }
 
@@ -143,6 +203,7 @@ class BookManager private constructor() {
     fun selectBook(bookId: String): Boolean {
         if (!loadedBooks.containsKey(bookId)) return false
         activeBookId = bookId
+        _activeBookFlow.value = bookId
         return true
     }
 

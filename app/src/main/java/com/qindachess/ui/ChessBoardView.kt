@@ -26,6 +26,7 @@ class ChessBoardView @JvmOverloads constructor(
         set(value) { field = value; invalidate() }
 
     var onMoveListener: ((Move) -> Unit)? = null
+    var onInvalidMoveListener: ((String) -> Unit)? = null
     var isInteractive: Boolean = true
     var showCoordinates: Boolean = true
     var flipBoard: Boolean = false
@@ -57,6 +58,8 @@ class ChessBoardView @JvmOverloads constructor(
 
     private var pieceRadius: Float = 0f
     private var cellSize: Float = 0f
+    private var cellW: Float = 0f   // 单格宽度（横向 = width / 8）
+    private var cellH: Float = 0f   // 单格高度（纵向 = height / 9）
     private var padding: Float = 0f
     private var boardWidth: Float = 0f
     private var boardHeight: Float = 0f
@@ -96,7 +99,7 @@ class ChessBoardView @JvmOverloads constructor(
 
         linePaint.color = Color.parseColor(skin.gridLine)
         linePaint.style = Paint.Style.STROKE
-        linePaint.strokeWidth = 1.0f
+        linePaint.strokeWidth = 1.4f
         linePaint.isAntiAlias = true
 
         redPiecePaint.color = Color.parseColor(skin.redPiece)
@@ -149,37 +152,41 @@ class ChessBoardView @JvmOverloads constructor(
     }
 
     private fun calculateDimensions() {
-        val density = resources.displayMetrics.density
+        // 完美铺满整个 View 的策略：
+        //   - 棋盘是 9 列 × 10 行，横向有 8 段 (col0..col8)，纵向有 9 段 (row0..row9)
+        //   - 让最后一颗棋子的右/下边缘与 View 的右/下边缘重合：
+        //       2*pr + 8*cellW = width    →  cellW = (width  - 2*pr) / 8
+        //       2*pr + 9*cellH = height   →  cellH = (height - 2*pr) / 9
+        //   - 棋子半径 pr ≤ min(cellW, cellH)/2 才不会与邻位重叠
+        //   - 取 pr = min(cellW, cellH) * 0.45 (留 10% 边距) ，迭代 2-3 次即可稳定
+        val w = width.toFloat().coerceAtLeast(1f)
+        val h = height.toFloat().coerceAtLeast(1f)
 
-        // 棋盘完全填满 View 区域，不留任何内部 padding（细黑边由父 FrameLayout 的 2dp padding 提供）
-        // 棋子中心点位于 row=0 / row=9 的格线上 → 棋子圆自然贴到 View 边缘（与目标样式一致）
-        val availWidth = (width.toFloat() - paddingLeft - paddingRight).coerceAtLeast(1f)
-        val availHeight = (height.toFloat() - paddingTop - paddingBottom).coerceAtLeast(1f)
-
-        // 中国象棋棋盘 9 列 × 10 行：8 个水平间隔，9 个垂直间隔 → 宽高比 = 8 / 9
-        val ratioBoard = 8f / 9f
-        val ratioSpace = availWidth / availHeight
-
-        if (ratioSpace > ratioBoard) {
-            // 容器比棋盘更宽 → 以高度为基准，水平居中
-            boardHeight = availHeight
-            boardWidth = boardHeight * ratioBoard
-        } else {
-            // 容器比棋盘更高（或正好）→ 以宽度为基准，垂直居中
-            boardWidth = availWidth
-            boardHeight = boardWidth / ratioBoard
+        var pr = 0f
+        var cw = w / 8f
+        var ch = h / 9f
+        repeat(3) {
+            pr = min(cw, ch) * 0.45f
+            cw = (w - 2f * pr) / 8f
+            ch = (h - 2f * pr) / 9f
         }
 
-        cellSize = boardWidth / 8f
-        pieceRadius = cellSize * 0.42f
+        pieceRadius = pr
+        cellW = cw
+        cellH = ch
+        // cellSize 保留为 min 维度，供指示器、十字、坐标等"逻辑单位"用
+        cellSize = min(cellW, cellH)
+        // boardWidth/boardHeight 用实际的水平/垂直跨度（用于"屏幕宽 = 8 段 + 2 颗棋子半径"）
+        boardWidth = 8f * cellW
+        boardHeight = 9f * cellH
 
-        // 棋盘在 View 内水平/垂直居中（不再上下各加 pieceRadius 余量）
-        originX = paddingLeft + (availWidth - boardWidth) / 2f
-        originY = paddingTop + (availHeight - boardHeight) / 2f
+        // 棋盘原点 = 棋子半径 → 第 0 行/0 列的棋子中心距离 View 左/上边各 pr 像素
+        originX = pieceRadius
+        originY = pieceRadius
 
         textPaint.textSize = cellSize * 0.25f
-        redPiecePaint.textSize = pieceRadius * 1.1f
-        blackPiecePaint.textSize = pieceRadius * 1.1f
+        redPiecePaint.textSize = pieceRadius * 1.05f
+        blackPiecePaint.textSize = pieceRadius * 1.05f
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -198,77 +205,57 @@ class ChessBoardView @JvmOverloads constructor(
     }
 
     private fun drawBoardBackground(canvas: Canvas) {
-        val r = 6f
-        val borderInset = 3f
-        // 用"边框色"画一个略大的圆角矩形
-        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL
-            color = Color.parseColor(skin.boardBorder)
-        }
-        canvas.drawRoundRect(
-            originX - borderInset, originY - borderInset,
-            originX + boardWidth + borderInset, originY + boardHeight + borderInset,
-            r, r, borderPaint
-        )
-        // 内部填"棋盘底色"，与外框紧贴
-        canvas.drawRoundRect(
-            originX, originY,
-            originX + boardWidth, originY + boardHeight,
-            r, r, boardPaint
+        // 整块木质底色铺满整个 View（不局限于 board 范围）
+        // 用矩形（不要圆角），让棋子完美触达屏幕四边
+        val r = 0f
+        canvas.drawRect(
+            0f, 0f,
+            width.toFloat(), height.toFloat(),
+            boardPaint
         )
     }
 
     private fun drawGridLines(canvas: Canvas) {
-        // 在画格线之前，先擦除掉所有棋子位置周围的格子线痕迹
-        for (row in 0 until 10) {
-            for (col in 0 until 9) {
-                val piece = board.getPiece(row, col) ?: continue
-                val (drawRow, drawCol) = transformPosition(row, col)
-                if (!isInBounds(drawRow, drawCol)) continue
-                val pt = toScreen(drawRow, drawCol)
-                // 用 boardBg 同色画一个比棋子略大的圆，覆盖格子线在棋子区域内的痕迹
-                val eraser = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    style = Paint.Style.FILL
-                    color = Color.parseColor(skin.boardBg)
-                }
-                canvas.drawCircle(pt.x, pt.y, pieceRadius + 1.5f, eraser)
-            }
-        }
-
+        // 横线（10 条，从 row=0 到 row=9）
         for (row in 0..9) {
-            val y = originY + row * cellSize
-            canvas.drawLine(originX, y, originX + boardWidth, y, linePaint)
+            val y = originY + row * cellH
+            canvas.drawLine(originX, y, originX + 8 * cellW, y, linePaint)
         }
+        // 竖线（9 条，从 col=0 到 col=8）
+        //   - 两边的 col=0 / col=8 走完整 9 段
+        //   - 中间的 col 1..7 在"楚河汉界"处 (row=4..row=5) 断开
         for (col in 0..8) {
-            val x = originX + col * cellSize
+            val x = originX + col * cellW
             if (col == 0 || col == 8) {
-                canvas.drawLine(x, originY, x, originY + boardHeight, linePaint)
+                canvas.drawLine(x, originY, x, originY + 9 * cellH, linePaint)
             } else {
-                canvas.drawLine(x, originY, x, originY + 4 * cellSize, linePaint)
-                canvas.drawLine(x, originY + 5 * cellSize, x, originY + boardHeight, linePaint)
+                canvas.drawLine(x, originY, x, originY + 4 * cellH, linePaint)
+                canvas.drawLine(x, originY + 5 * cellH, x, originY + 9 * cellH, linePaint)
             }
         }
     }
 
     private fun drawPalaceDiagonals(canvas: Canvas) {
+        // 上方九宫 (row 0..2, col 3..5)
         canvas.drawLine(
-            originX + 3 * cellSize, originY,
-            originX + 5 * cellSize, originY + 2 * cellSize,
+            originX + 3 * cellW, originY,
+            originX + 5 * cellW, originY + 2 * cellH,
             linePaint
         )
         canvas.drawLine(
-            originX + 5 * cellSize, originY,
-            originX + 3 * cellSize, originY + 2 * cellSize,
+            originX + 5 * cellW, originY,
+            originX + 3 * cellW, originY + 2 * cellH,
+            linePaint
+        )
+        // 下方九宫 (row 7..9, col 3..5)
+        canvas.drawLine(
+            originX + 3 * cellW, originY + 7 * cellH,
+            originX + 5 * cellW, originY + 9 * cellH,
             linePaint
         )
         canvas.drawLine(
-            originX + 3 * cellSize, originY + 7 * cellSize,
-            originX + 5 * cellSize, originY + 9 * cellSize,
-            linePaint
-        )
-        canvas.drawLine(
-            originX + 5 * cellSize, originY + 7 * cellSize,
-            originX + 3 * cellSize, originY + 9 * cellSize,
+            originX + 5 * cellW, originY + 7 * cellH,
+            originX + 3 * cellW, originY + 9 * cellH,
             linePaint
         )
     }
@@ -284,30 +271,31 @@ class ChessBoardView @JvmOverloads constructor(
         for ((row, col) in marks) {
             val (drawRow, drawCol) = transformPosition(row, col)
             if (!isInBounds(drawRow, drawCol)) continue
-            val cx = originX + drawCol * cellSize
-            val cy = originY + drawRow * cellSize
+            val cx = originX + drawCol * cellW
+            val cy = originY + drawRow * cellH
 
             val onEdgeLeft = drawCol == 0
             val onEdgeRight = drawCol == 8
             val onEdgeTop = drawRow == 0 || drawRow == 9
 
+            // 左外侧拐角（不在最左列时画左上拐角）
             if (!onEdgeLeft) {
-                canvas.drawLine(cx - cellSize / 2 + 5f, cy - markSize, cx - cellSize / 2 + 5f, cy - 5f, crossPaint)
-                canvas.drawLine(cx - cellSize / 2 + 5f, cy - markSize, cx - cellSize / 2 + 5f + markSize, cy - markSize, crossPaint)
+                canvas.drawLine(cx - cellW / 2 + 5f, cy - markSize, cx - cellW / 2 + 5f, cy - 5f, crossPaint)
+                canvas.drawLine(cx - cellW / 2 + 5f, cy - markSize, cx - cellW / 2 + 5f + markSize, cy - markSize, crossPaint)
             }
+            // 右外侧拐角（不在最右列时画右上拐角）
             if (!onEdgeRight) {
-                canvas.drawLine(cx + cellSize / 2 - 5f, cy - markSize, cx + cellSize / 2 - 5f, cy - 5f, crossPaint)
-                canvas.drawLine(cx + cellSize / 2 - 5f - markSize, cy - markSize, cx + cellSize / 2 - 5f, cy - markSize, crossPaint)
+                canvas.drawLine(cx + cellW / 2 - 5f, cy - markSize, cx + cellW / 2 - 5f, cy - 5f, crossPaint)
+                canvas.drawLine(cx + cellW / 2 - 5f - markSize, cy - markSize, cx + cellW / 2 - 5f, cy - markSize, crossPaint)
             }
-            if (!onEdgeTop || (drawRow == 0 || drawRow == 9)) {
-                if (drawRow != 0) {
-                    canvas.drawLine(cx - markSize, cy - cellSize / 2 + 5f, cx - 5f, cy - cellSize / 2 + 5f, crossPaint)
-                    canvas.drawLine(cx - markSize, cy - cellSize / 2 + 5f, cx - markSize, cy - cellSize / 2 + 5f - markSize, crossPaint)
-                }
-                if (drawRow != 9) {
-                    canvas.drawLine(cx - markSize, cy + cellSize / 2 - 5f, cx - 5f, cy + cellSize / 2 - 5f, crossPaint)
-                    canvas.drawLine(cx - markSize, cy + cellSize / 2 - 5f, cx - markSize, cy + cellSize / 2 - 5f + markSize, crossPaint)
-                }
+            // 上/下拐角（用于不是顶/底行时画上下拐角）
+            if (drawRow != 0) {
+                canvas.drawLine(cx - markSize, cy - cellH / 2 + 5f, cx - 5f, cy - cellH / 2 + 5f, crossPaint)
+                canvas.drawLine(cx - markSize, cy - cellH / 2 + 5f, cx - markSize, cy - cellH / 2 + 5f - markSize, crossPaint)
+            }
+            if (drawRow != 9) {
+                canvas.drawLine(cx - markSize, cy + cellH / 2 - 5f, cx - 5f, cy + cellH / 2 - 5f, crossPaint)
+                canvas.drawLine(cx - markSize, cy + cellH / 2 - 5f, cx - markSize, cy + cellH / 2 - 5f + markSize, crossPaint)
             }
         }
     }
@@ -576,6 +564,9 @@ class ChessBoardView @JvmOverloads constructor(
     }
 
     private fun drawPieces(canvas: Canvas) {
+        // 棋子背景圆比 pieceRadius 大 2.5f（linePaint.strokeWidth = 1.4f，0.7f 半宽 + 1.8f 余量），
+        // 既能完全遮住格线交叉处的痕迹，又不至于在棋子周围形成可见"光晕"。
+        val bgRadius = pieceRadius + 2.5f
         for (row in 0 until 10) {
             for (col in 0 until 9) {
                 val (drawRow, drawCol) = transformPosition(row, col)
@@ -585,12 +576,12 @@ class ChessBoardView @JvmOverloads constructor(
                 val pt = toScreen(drawRow, drawCol)
                 val isRed = piece.color == PieceColor.RED
 
-                // 1) 棋子背景圆（实心，覆盖格线在棋子区域内的部分，避免"头发丝"格线露出）
-                canvas.drawCircle(pt.x, pt.y, pieceRadius, pieceBgPaint)
+                // 1) 棋子背景圆：覆盖格线交叉位置，避免"毛毛"
+                canvas.drawCircle(pt.x, pt.y, bgRadius, pieceBgPaint)
 
-                // 2) 描边：宽度 1f，位置在 pieceRadius - 0.5f 紧贴圆内
+                // 2) 描边：宽度 1.5f，紧贴圆内
                 if (pieceStyle.showBorder) {
-                    val borderW = 1.0f
+                    val borderW = 1.5f
                     val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         style = Paint.Style.STROKE
                         strokeWidth = borderW
@@ -603,7 +594,7 @@ class ChessBoardView @JvmOverloads constructor(
                 if (pieceStyle.showCharacter) {
                     val char = getPieceChar(piece)
                     val tp = if (isRed) redPiecePaint else blackPiecePaint
-                    tp.textSize = pieceRadius * 1.1f
+                    tp.textSize = pieceRadius * 1.05f
                     val fm = tp.fontMetrics
                     val baseline = pt.y - (fm.ascent + fm.descent) / 2f
                     canvas.drawText(char, pt.x, baseline, tp)
@@ -678,19 +669,21 @@ class ChessBoardView @JvmOverloads constructor(
             textAlign = Paint.Align.CENTER
         }
 
+        // 顶部 + 底部：棋盘列号（黑方视角下方向相反，flipBoard 时由 transformPosition 翻转）
         for (col in 0 until 9) {
             val (_, drawCol) = transformPosition(0, col)
-            val x = originX + drawCol * cellSize
-            val topY = originY - textPaint.textSize
-            val bottomY = originY + boardHeight + textPaint.textSize - 4
+            val x = originX + drawCol * cellW
+            val topY = originY - textPaint.textSize * 0.6f
+            val bottomY = originY + 9 * cellH + textPaint.textSize * 0.9f
             canvas.drawText((9 - col).toString(), x, topY, coordPaint)
             canvas.drawText((9 - col).toString(), x, bottomY, coordPaint)
         }
+        // 左 + 右：棋盘行号
         for (row in 0 until 10) {
             val (drawRow, _) = transformPosition(row, 0)
-            val leftX = originX - textPaint.textSize
-            val rightX = originX + boardWidth + textPaint.textSize
-            val y = originY + drawRow * cellSize + cellSize / 3
+            val leftX = originX - textPaint.textSize * 0.5f
+            val rightX = originX + 8 * cellW + textPaint.textSize * 0.8f
+            val y = originY + drawRow * cellH + cellSize / 3
             canvas.drawText((10 - row).toString(), leftX, y, coordPaint)
             canvas.drawText((10 - row).toString(), rightX, y, coordPaint)
         }
@@ -701,10 +694,10 @@ class ChessBoardView @JvmOverloads constructor(
             textAlign = Paint.Align.CENTER
             isFakeBoldText = true
         }
-        val midY = originY + 4.5f * cellSize
-        val midX = originX + boardWidth / 2f
-        canvas.drawText("楚 河", midX - cellSize * 2, midY + cellSize * 0.15f, riverPaint)
-        canvas.drawText("漢 界", midX + cellSize * 2, midY + cellSize * 0.15f, riverPaint)
+        val midY = originY + 4.5f * cellH
+        val midX = originX + 4 * cellW
+        canvas.drawText("楚 河", midX - cellW, midY + cellH * 0.15f, riverPaint)
+        canvas.drawText("漢 界", midX + cellW, midY + cellH * 0.15f, riverPaint)
     }
 
     private fun transformPosition(row: Int, col: Int): Pair<Int, Int> {
@@ -720,16 +713,16 @@ class ChessBoardView @JvmOverloads constructor(
     private fun toScreen(row: Int, col: Int): PointF {
         val (drawRow, drawCol) = transformPosition(row, col)
         return PointF(
-            originX + drawCol * cellSize,
-            originY + drawRow * cellSize
+            originX + drawCol * cellW,
+            originY + drawRow * cellH
         )
     }
 
     private fun fromScreen(x: Float, y: Float): Position? {
-        val col = ((x - originX) / cellSize + 0.5f).toInt()
-        val row = ((y - originY) / cellSize + 0.5f).toInt()
-        if (col !in 0..8 || row !in 0..9) return null
-        val (origRow, origCol) = transformPosition(row, col)
+        val drawCol = ((x - originX) / cellW + 0.5f).toInt()
+        val drawRow = ((y - originY) / cellH + 0.5f).toInt()
+        if (drawCol !in 0..8 || drawRow !in 0..9) return null
+        val (origRow, origCol) = transformPosition(drawRow, drawCol)
         if (origRow !in 0..9 || origCol !in 0..8) return null
         return Position(origRow, origCol)
     }
@@ -757,13 +750,19 @@ class ChessBoardView @JvmOverloads constructor(
         pos ?: run { invalidate(); return }
 
         val piece = board.getPiece(pos.row, pos.col)
+        val currentTurn = board.sideToMove
 
         if (selectedPosition == null) {
-            if (piece != null) {
+            if (piece != null && piece.color == currentTurn) {
+                // 选中的必须是当前应走方的棋子（避免误选对方棋子又点不到合法目标）
                 selectedPosition = pos
                 computeValidMoves(pos)
+            } else if (piece != null) {
+                // 对方棋子：触发 onError 提示（不是你的回合）
+                onInvalidMoveListener?.invoke("现在该${if (currentTurn == PieceColor.RED) "红" else "黑"}方走子")
             }
         } else if (selectedPosition == pos) {
+            // 再次点击同一颗 → 取消选中
             selectedPosition = null
             validMoves.clear()
         } else {
@@ -772,10 +771,18 @@ class ChessBoardView @JvmOverloads constructor(
                 onMoveListener?.invoke(move)
                 selectedPosition = null
                 validMoves.clear()
-            } else if (piece != null) {
+            } else if (piece != null && piece.color == currentTurn) {
+                // 切换选中到另一颗己方棋子
                 selectedPosition = pos
                 computeValidMoves(pos)
+            } else if (piece != null) {
+                // 点击对方棋子（不在 validMoves 里）：无效走法
+                onInvalidMoveListener?.invoke("此走法不合法")
+                selectedPosition = null
+                validMoves.clear()
             } else {
+                // 空白格且不在 validMoves 里：无效走法
+                onInvalidMoveListener?.invoke("此走法不合法")
                 selectedPosition = null
                 validMoves.clear()
             }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 默认仅允许 HTTPS -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+    <!-- 云库 chessdb.cn 仍使用 HTTP（部分老接口无 HTTPS），显式放行 -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">chessdb.cn</domain>
+        <domain includeSubdomains="true">www.chessdb.cn</domain>
+    </domain-config>
+</network-security-config>

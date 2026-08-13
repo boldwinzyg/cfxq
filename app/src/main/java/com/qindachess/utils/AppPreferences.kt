@@ -41,6 +41,13 @@ class AppPreferences(context: Context) {
         private const val KEY_BOARD_SKIN_ID = "board_skin_id"
         private const val KEY_PIECE_STYLE_ID = "piece_style_id"
 
+        // Appearance settings —— 全局换肤
+        private const val KEY_CUSTOM_BG = "custom_background_path"   // 用户自定义背景图绝对路径
+        private const val KEY_TOP_BAR_ALPHA = "top_bar_alpha"        // 顶栏透明度 0f-1f
+        private const val KEY_BOARD_ALPHA = "board_alpha"            // 棋盘透明度
+        private const val KEY_PANEL_ALPHA = "panel_alpha"            // 分析/开局库面板透明度
+        private const val KEY_BOTTOM_BAR_ALPHA = "bottom_bar_alpha"  // 底栏透明度
+
         // Display settings
         private const val KEY_SHOW_COORDINATES = "show_coordinates"
         private const val KEY_FLIP_BY_DEFAULT = "flip_board_by_default"
@@ -149,6 +156,28 @@ class AppPreferences(context: Context) {
     var pieceStyleId: String
         get() = prefs.getString(KEY_PIECE_STYLE_ID, "traditional") ?: "traditional"
         set(value) = prefs.edit().putString(KEY_PIECE_STYLE_ID, value).apply()
+
+    // ──── 全局换肤：背景图 + 四个区域独立透明度 ────
+
+    var customBackgroundPath: String
+        get() = prefs.getString(KEY_CUSTOM_BG, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_CUSTOM_BG, value).apply()
+
+    var topBarAlpha: Float
+        get() = prefs.getFloat(KEY_TOP_BAR_ALPHA, 1f)
+        set(value) = prefs.edit().putFloat(KEY_TOP_BAR_ALPHA, value.coerceIn(0f, 1f)).apply()
+
+    var boardAlpha: Float
+        get() = prefs.getFloat(KEY_BOARD_ALPHA, 1f)
+        set(value) = prefs.edit().putFloat(KEY_BOARD_ALPHA, value.coerceIn(0f, 1f)).apply()
+
+    var panelAlpha: Float
+        get() = prefs.getFloat(KEY_PANEL_ALPHA, 1f)
+        set(value) = prefs.edit().putFloat(KEY_PANEL_ALPHA, value.coerceIn(0f, 1f)).apply()
+
+    var bottomBarAlpha: Float
+        get() = prefs.getFloat(KEY_BOTTOM_BAR_ALPHA, 1f)
+        set(value) = prefs.edit().putFloat(KEY_BOTTOM_BAR_ALPHA, value.coerceIn(0f, 1f)).apply()
 
     var showCoordinates: Boolean
         get() = prefs.getBoolean(KEY_SHOW_COORDINATES, true)

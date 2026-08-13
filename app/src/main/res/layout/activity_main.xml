@@ -1,354 +1,375 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootContainer"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#1A2F3A">
+    android:layout_height="match_parent">
 
-    <!-- 顶部工具栏 -->
+    <!-- 最底层：可选的全局背景图；没选图片时用主题的 backgroundColor -->
+    <ImageView
+        android:id="@+id/globalBackground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"
+        android:visibility="gone"/>
+
     <LinearLayout
+        android:id="@+id/contentRoot"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:background="#E8E8E8"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="2dp"
-        android:paddingEnd="2dp">
-
-        <ImageButton android:id="@+id/toolSettings"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="菜单"
-            android:src="@drawable/ic_menu_edit"
-            android:scaleType="centerInside" android:padding="4dp"/>
-
-        <ImageButton android:id="@+id/toolNew"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="新局"
-            android:src="@drawable/ic_new_file"
-            android:scaleType="centerInside" android:padding="4dp"/>
-
-        <ImageButton android:id="@+id/toolMonitor1"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="电脑执红"
-            android:src="@drawable/ic_computer_red"
-            android:scaleType="centerInside" android:padding="4dp"/>
-
-        <ImageButton android:id="@+id/toolMonitor2"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="电脑执黑"
-            android:src="@drawable/ic_computer_black"
-            android:scaleType="centerInside" android:padding="4dp"/>
-
-        <ImageButton android:id="@+id/toolSearch"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="搜索"
-            android:src="@drawable/ic_search"
-            android:scaleType="centerInside" android:padding="4dp"
-            android:tint="#333333"/>
-
-        <ImageButton android:id="@+id/toolAnalysis"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="闪电"
-            android:src="@drawable/ic_bolt"
-            android:scaleType="centerInside" android:padding="4dp"
-            android:tint="#333333"/>
-
-        <ImageButton android:id="@+id/toolCloud"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="云"
-            android:src="@drawable/ic_bottom_cloud"
-            android:scaleType="centerInside" android:padding="4dp"/>
-
-        <ImageButton android:id="@+id/toolFlip"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="翻转"
-            android:src="@drawable/ic_flip_dark"
-            android:scaleType="centerInside" android:padding="4dp"/>
-
-        <ImageButton android:id="@+id/toolEdit"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="编辑"
-            android:src="@drawable/ic_edit_dark"
-            android:scaleType="centerInside" android:padding="4dp"/>
-    </LinearLayout>
-
-    <!-- 棋盘区 -->
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="#5D4037"
-        android:padding="2dp">
-
-        <com.qindachess.ui.ChessBoardView
-            android:id="@+id/boardView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
-    </FrameLayout>
-
-    <!-- 回放控制栏 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:background="#E8E8E8"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp">
-
-        <ImageButton android:id="@+id/stepFirst"
-            android:layout_width="48dp" android:layout_height="match_parent"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="到头"
-            android:src="@drawable/ic_step_first"
-            android:scaleType="centerInside"/>
-
-        <ImageButton android:id="@+id/stepPrev"
-            android:layout_width="48dp" android:layout_height="match_parent"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="上一步"
-            android:src="@drawable/ic_step_prev"
-            android:scaleType="centerInside"/>
-
-        <ImageButton android:id="@+id/stepNext"
-            android:layout_width="48dp" android:layout_height="match_parent"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="下一步"
-            android:src="@drawable/ic_step_next"
-            android:scaleType="centerInside"
-            android:layout_marginStart="4dp"/>
-
-        <ImageButton android:id="@+id/stepLast"
-            android:layout_width="48dp" android:layout_height="match_parent"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="到尾"
-            android:src="@drawable/ic_step_last"
-            android:scaleType="centerInside"/>
-
-        <View android:layout_width="0dp" android:layout_height="0dp"
-            android:layout_weight="1"/>
-
-        <ImageButton android:id="@+id/stepPlay"
-            android:layout_width="48dp" android:layout_height="match_parent"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="播放"
-            android:src="@drawable/ic_step_play"
-            android:scaleType="centerInside"/>
-    </LinearLayout>
-
-    <!-- Tab 栏 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:background="#F0F0F0"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <TextView android:id="@+id/tabEngine"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="分析" android:textSize="17sp"
-            android:textColor="#333333"
-            android:textStyle="bold"
-            android:background="@drawable/bg_tab_selected_v2"/>
-
-        <TextView android:id="@+id/tabBook"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="开局库" android:textSize="16sp"
-            android:textColor="#888888"/>
-
-        <TextView android:id="@+id/tabRecord"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="云库" android:textSize="16sp"
-            android:textColor="#888888"/>
-
-        <TextView android:id="@+id/tabPosition"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="局势图" android:textSize="16sp"
-            android:textColor="#888888"/>
-    </LinearLayout>
-
-    <!-- Tab 内容区 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="220dp"
+        android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="#E3F2FD">
+        android:background="#1A2F3A">
 
-        <!-- 引擎信息条 -->
+        <!-- 顶部工具栏（可设置透明度） -->
         <LinearLayout
+            android:id="@+id/topBar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
+            android:background="#E8E8E8"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:background="#37474F"
-            android:paddingTop="10dp" android:paddingBottom="10dp"
-            android:paddingStart="16dp" android:paddingEnd="16dp">
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp">
 
-            <TextView android:id="@+id/infoDepth"
-                android:layout_width="0dp" android:layout_height="wrap_content"
+            <ImageButton android:id="@+id/toolSettings"
+                android:layout_width="0dp" android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="深度:--" android:textSize="14sp"
-                android:textColor="#FFFFFF"/>
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="菜单"
+                android:src="@drawable/ic_menu_edit"
+                android:scaleType="centerInside" android:padding="4dp"/>
 
-            <TextView android:id="@+id/infoNodes"
-                android:layout_width="0dp" android:layout_height="wrap_content"
+            <ImageButton android:id="@+id/toolNew"
+                android:layout_width="0dp" android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="节点:--" android:textSize="14sp"
-                android:textColor="#FFFFFF"/>
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="新局"
+                android:src="@drawable/ic_new_file"
+                android:scaleType="centerInside" android:padding="4dp"/>
 
-            <TextView android:id="@+id/infoNps"
-                android:layout_width="0dp" android:layout_height="wrap_content"
+            <ImageButton android:id="@+id/toolMonitor1"
+                android:layout_width="0dp" android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="NPS:--" android:textSize="14sp"
-                android:textColor="#FFFFFF"/>
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="电脑执红"
+                android:src="@drawable/ic_computer_red"
+                android:scaleType="centerInside" android:padding="4dp"/>
 
-            <TextView android:id="@+id/infoTime"
-                android:layout_width="0dp" android:layout_height="wrap_content"
+            <ImageButton android:id="@+id/toolMonitor2"
+                android:layout_width="0dp" android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="时间:--" android:textSize="14sp"
-                android:textColor="#FFFFFF"/>
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="电脑执黑"
+                android:src="@drawable/ic_computer_black"
+                android:scaleType="centerInside" android:padding="4dp"/>
 
-            <TextView android:id="@+id/infoEval"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="均势" android:textSize="14sp"
-                android:textColor="#FFFFFF"
-                android:textStyle="bold"/>
+            <ImageButton android:id="@+id/toolSearch"
+                android:layout_width="0dp" android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="搜索"
+                android:src="@drawable/ic_search"
+                android:scaleType="centerInside" android:padding="4dp"
+                android:tint="#333333"/>
+
+            <ImageButton android:id="@+id/toolAnalysis"
+                android:layout_width="0dp" android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="闪电"
+                android:src="@drawable/ic_bolt"
+                android:scaleType="centerInside" android:padding="4dp"
+                android:tint="#333333"/>
+
+            <ImageButton android:id="@+id/toolCloud"
+                android:layout_width="0dp" android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="云"
+                android:src="@drawable/ic_bottom_cloud"
+                android:scaleType="centerInside" android:padding="4dp"/>
+
+            <ImageButton android:id="@+id/toolFlip"
+                android:layout_width="0dp" android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="翻转"
+                android:src="@drawable/ic_flip_dark"
+                android:scaleType="centerInside" android:padding="4dp"/>
+
+            <ImageButton android:id="@+id/toolEdit"
+                android:layout_width="0dp" android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="编辑"
+                android:src="@drawable/ic_edit_dark"
+                android:scaleType="centerInside" android:padding="4dp"/>
         </LinearLayout>
 
-        <!-- 走法列表 / 空状态 -->
+        <!-- 棋盘区（可设置透明度；整个棋盘背景板独立一层） -->
         <FrameLayout
+            android:id="@+id/boardContainer"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1">
 
-            <ScrollView
-                android:id="@+id/scrollMoveList"
+            <com.qindachess.ui.ChessBoardView
+                android:id="@+id/boardView"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:fillViewport="true">
+                android:layout_height="match_parent"/>
+        </FrameLayout>
+
+        <!-- 回放控制栏 -->
+        <LinearLayout
+            android:id="@+id/topControlsBar"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:background="#E8E8E8"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
+
+            <ImageButton android:id="@+id/stepFirst"
+                android:layout_width="48dp" android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="到头"
+                android:src="@drawable/ic_step_first"
+                android:scaleType="centerInside"/>
+
+            <ImageButton android:id="@+id/stepPrev"
+                android:layout_width="48dp" android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="上一步"
+                android:src="@drawable/ic_step_prev"
+                android:scaleType="centerInside"/>
+
+            <ImageButton android:id="@+id/stepNext"
+                android:layout_width="48dp" android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="下一步"
+                android:src="@drawable/ic_step_next"
+                android:scaleType="centerInside"
+                android:layout_marginStart="4dp"/>
+
+            <ImageButton android:id="@+id/stepLast"
+                android:layout_width="48dp" android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="到尾"
+                android:src="@drawable/ic_step_last"
+                android:scaleType="centerInside"/>
+
+            <View android:layout_width="0dp" android:layout_height="0dp"
+                android:layout_weight="1"/>
+
+            <ImageButton android:id="@+id/stepPlay"
+                android:layout_width="48dp" android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="播放"
+                android:src="@drawable/ic_step_play"
+                android:scaleType="centerInside"/>
+        </LinearLayout>
+
+        <!-- Tab 栏 + 内容区（合并成"面板"，共用 panelAlpha） -->
+        <LinearLayout
+            android:id="@+id/panelContainer"
+            android:layout_width="match_parent"
+            android:layout_height="264dp"
+            android:orientation="vertical"
+            android:background="#E3F2FD">
+
+            <!-- Tab 栏 -->
+            <LinearLayout
+                android:id="@+id/tabBar"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:background="#F0F0F0"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView android:id="@+id/tabEngine"
+                    android:layout_width="0dp" android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="分析" android:textSize="17sp"
+                    android:textColor="#333333"
+                    android:textStyle="bold"
+                    android:background="@drawable/bg_tab_selected_v2"/>
+
+                <TextView android:id="@+id/tabBook"
+                    android:layout_width="0dp" android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="开局库" android:textSize="16sp"
+                    android:textColor="#888888"/>
+
+                <TextView android:id="@+id/tabRecord"
+                    android:layout_width="0dp" android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="云库" android:textSize="16sp"
+                    android:textColor="#888888"/>
+
+                <TextView android:id="@+id/tabPosition"
+                    android:layout_width="0dp" android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="局势图" android:textSize="16sp"
+                    android:textColor="#888888"/>
+            </LinearLayout>
+
+            <!-- 引擎信息条 -->
+            <LinearLayout
+                android:id="@+id/engineInfoBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="#37474F"
+                android:paddingTop="6dp" android:paddingBottom="6dp"
+                android:paddingStart="12dp" android:paddingEnd="12dp">
+
+                <TextView android:id="@+id/infoDepth"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="深度:--" android:textSize="13sp"
+                    android:textColor="#FFFFFF"/>
+
+                <TextView android:id="@+id/infoNodes"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="节点:--" android:textSize="13sp"
+                    android:textColor="#FFFFFF"/>
+
+                <TextView android:id="@+id/infoNps"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="NPS:--" android:textSize="13sp"
+                    android:textColor="#FFFFFF"/>
+
+                <TextView android:id="@+id/infoTime"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="时间:--" android:textSize="13sp"
+                    android:textColor="#FFFFFF"/>
+
+                <TextView android:id="@+id/infoEval"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="均势" android:textSize="13sp"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+
+            <!-- 走法列表 / 空状态 -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <ScrollView
+                    android:id="@+id/scrollMoveList"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:fillViewport="true">
+
+                    <LinearLayout
+                        android:id="@+id/moveListContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="4dp"/>
+                </ScrollView>
 
                 <LinearLayout
-                    android:id="@+id/moveListContainer"
+                    android:id="@+id/emptyState"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:orientation="vertical"
-                    android:padding="4dp"/>
-            </ScrollView>
+                    android:gravity="center"
+                    android:visibility="visible">
+
+                    <ImageView
+                        android:layout_width="64dp" android:layout_height="64dp"
+                        android:src="@drawable/ic_empty_chart"
+                        android:alpha="0.5"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="暂无分析数据"
+                        android:textSize="16sp"
+                        android:textColor="#90A4AE"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="启动引擎并分析后显示"
+                        android:textSize="13sp"
+                        android:textColor="#B0BEC5"/>
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- 底部控制按钮栏（可设置透明度） -->
+        <LinearLayout
+            android:id="@+id/bottomBar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_bottom_control"
+            android:gravity="center"
+            android:orientation="horizontal">
 
             <LinearLayout
-                android:id="@+id/emptyState"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:visibility="visible">
-
-                <ImageView
-                    android:layout_width="64dp" android:layout_height="64dp"
-                    android:src="@drawable/ic_empty_chart"
-                    android:alpha="0.5"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="暂无分析数据"
-                    android:textSize="16sp"
-                    android:textColor="#90A4AE"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="启动引擎并分析后显示"
-                    android:textSize="13sp"
-                    android:textColor="#B0BEC5"/>
+                android:id="@+id/bottomCopy"
+                android:layout_width="0dp" android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/bg_menu_item_selector"
+                android:gravity="center">
+                <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                    android:src="@drawable/ic_copy"/>
             </LinearLayout>
-        </FrameLayout>
-    </LinearLayout>
 
-    <!-- 底部控制按钮栏 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="@drawable/bg_bottom_control"
-        android:gravity="center"
-        android:orientation="horizontal">
+            <LinearLayout
+                android:id="@+id/bottomPaste"
+                android:layout_width="0dp" android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/bg_menu_item_selector"
+                android:gravity="center">
+                <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                    android:src="@drawable/ic_paste"/>
+            </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/bottomCopy"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/bg_menu_item_selector"
-            android:gravity="center">
-            <ImageView android:layout_width="28dp" android:layout_height="28dp"
-                android:src="@drawable/ic_copy"/>
-        </LinearLayout>
+            <LinearLayout
+                android:id="@+id/bottomRecordMgr"
+                android:layout_width="0dp" android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/bg_menu_item_selector"
+                android:gravity="center">
+                <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                    android:src="@drawable/ic_record_manager"/>
+            </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/bottomPaste"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/bg_menu_item_selector"
-            android:gravity="center">
-            <ImageView android:layout_width="28dp" android:layout_height="28dp"
-                android:src="@drawable/ic_paste"/>
-        </LinearLayout>
+            <LinearLayout
+                android:id="@+id/bottomConnect"
+                android:layout_width="0dp" android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/bg_menu_item_selector"
+                android:gravity="center">
+                <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                    android:src="@drawable/ic_connect_setting"/>
+            </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/bottomRecordMgr"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/bg_menu_item_selector"
-            android:gravity="center">
-            <ImageView android:layout_width="28dp" android:layout_height="28dp"
-                android:src="@drawable/ic_record_manager"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/bottomConnect"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/bg_menu_item_selector"
-            android:gravity="center">
-            <ImageView android:layout_width="28dp" android:layout_height="28dp"
-                android:src="@drawable/ic_connect_setting"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/bottomAutoConnect"
-            android:layout_width="0dp" android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/bg_menu_item_selector"
-            android:gravity="center">
-            <ImageView android:layout_width="28dp" android:layout_height="28dp"
-                android:src="@drawable/ic_auto_connect"/>
+            <LinearLayout
+                android:id="@+id/bottomAutoConnect"
+                android:layout_width="0dp" android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/bg_menu_item_selector"
+                android:gravity="center">
+                <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                    android:src="@drawable/ic_auto_connect"/>
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 
-</LinearLayout>
+</FrameLayout>

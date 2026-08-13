@@ -4,7 +4,6 @@ import android.app.Application
 import android.util.Log
 import com.qindachess.book.BookManager
 import com.qindachess.book.CloudBookManager
-import com.qindachess.book.EmptyBook
 import com.qindachess.engine.GameManager
 import com.qindachess.engine.GameManagerV2
 import com.qindachess.engine.ResourceManager
@@ -49,7 +48,7 @@ class QinDaApp : Application() {
         RecordManager.init(this)
 
         resourceManager = ResourceManager(this)
-        gameManager = GameManager(engineManager, BookManager.getInstance().activeBook ?: EmptyBook)
+        gameManager = GameManager(engineManager, bookManager)
         gameManagerV2 = GameManagerV2(engineManager, bookManager, cloudBookManager)
 
         appScope.launch {
@@ -71,13 +70,34 @@ class QinDaApp : Application() {
                         result.bookPath
                     )
                     Log.i(TAG, "Built-in book registered: ${bookInfo?.name ?: "failed"}")
+                } else {
+                    // assets 没有有效开局库（或被识别为占位符）→ 直接注册 BuiltInBook 兜底
+                    Log.w(TAG, "No book asset deployed, registering BuiltInBook directly")
+                    bookManager.registerBuiltInBook(
+                        "内置兜底开局库",
+                        "内置主流布局前 3-5 步",
+                        ""   // 空路径，让 BookManager 走 registerFallbackBook
+                    )
                 }
 
-                if (result.enginePath != null) {
-                    val engineLoaded = engineManager.loadEngine(result.enginePath, result.nnuePath)
-                    Log.i(TAG, "Engine loaded: $engineLoaded")
+                // 引擎路径优先级：
+                // 1) AppPreferences 中用户已设置且文件存在
+                // 2) assets 部署的内置引擎
+                val savedEnginePath = prefs.enginePath.takeIf { it.isNotBlank() && java.io.File(it).exists() }
+                val finalEnginePath = savedEnginePath ?: result.enginePath
+                val finalNnuePath = if (savedEnginePath != null) {
+                    prefs.nnuePath.takeIf { it.isNotBlank() && java.io.File(it).exists() }
+                } else result.nnuePath
+
+                if (finalEnginePath != null) {
+                    val engineLoaded = engineManager.loadEngine(finalEnginePath, finalNnuePath)
+                    Log.i(TAG, "Engine loaded: $engineLoaded (path=$finalEnginePath)")
 
                     if (engineLoaded) {
+                        // 记住实际可用的路径，下次启动直接用
+                        prefs.enginePath = finalEnginePath
+                        if (finalNnuePath != null) prefs.nnuePath = finalNnuePath
+
                         engineManager.applySearchOptions(
                             com.qindachess.engine.SearchOptions(
                                 depth = prefs.searchDepth,
@@ -89,6 +109,8 @@ class QinDaApp : Application() {
                             )
                         )
                     }
+                } else {
+                    Log.w(TAG, "无任何引擎可用，请到菜单→引擎设置中导入 pikafish / yukfish / .so")
                 }
 
                 resourcesLoaded = true

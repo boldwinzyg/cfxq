@@ -60,12 +60,24 @@ class GameManagerV2(
     private val cloudBookProvider: com.qindachess.book.CloudBookManager
 ) {
     /**
-     * 查询云库当前局面的招法，返回 [UCI, 胜率/频率] 二元组。
-     * 若联网失败返回 null。
+     * 查询云库当前局面的招法，返回 [UCI, 显示文本] 二元组。
+     * 若联网失败返回 null（云库管理器内部已处理 BuiltInBook fallback）。
      */
     suspend fun queryCloudMoves(fen: String): List<Pair<String, String>>? {
         val resp = cloudBookProvider.queryMoves(fen, 0) ?: return null
-        return resp.moves.map { it.uciMove to String.format("%.0f%%", it.score * 100) }
+        if (resp.moves.isEmpty()) return null
+        return resp.moves.map { m ->
+            // m.wins 是 0-10000 整数表示 winrate 百分比 * 100
+            // 例如 wins=5008 表示 50.08%
+            val winratePct = if (m.wins > 0) m.wins / 100.0 else 50.0
+            // 显示格式：得分（cp/百分比），紧凑形式
+            val display = if (m.score != 0.0) {
+                String.format("%.2f%% (%+d)", winratePct, m.score.toInt())
+            } else {
+                String.format("%.2f%%", winratePct)
+            }
+            m.uciMove to display
+        }
     }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 

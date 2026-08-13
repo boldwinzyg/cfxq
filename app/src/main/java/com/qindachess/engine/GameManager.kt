@@ -27,7 +27,7 @@ data class GameState(
 
 class GameManager(
     private val engineManager: UciEngineManager,
-    private val book: IOpeningBook
+    private val bookProvider: com.qindachess.book.BookManager
 ) {
     private val scope = CoroutineScope(Dispatchers.Main)
 
@@ -51,15 +51,31 @@ class GameManager(
         }
     }
 
-    fun applyPlayerMove(move: Move) {
+    /**
+     * 玩家尝试走子。返回 true 表示走子成功；false 表示被拒绝（不合法/已结束）。
+     * 走子合法性由 [isValidMove] 校验：会过滤掉吃自己、送将等非法情况。
+     *
+     * 注意：非 autoPlay 模式下，玩家可以走任意当前方（手动同时下两边）。
+     *       autoPlay 模式下，playAsRed 决定电脑走哪一方，玩家走另一方。
+     */
+    fun applyPlayerMove(move: Move): Boolean {
         val currentState = _gameState.value
-        if (currentState.gameOver) return
-        if (currentState.sideToMove == if (playAsRed) PieceColor.RED else PieceColor.BLACK) {
-            executeMove(move)
-            if (autoPlay && !_gameState.value.gameOver) {
-                scope.launch { makeAutoMove() }
-            }
+        if (currentState.gameOver) return false
+
+        // 1) 起点必须是己方回合的棋子
+        val piece = currentState.board.getPiece(move.from.row, move.from.col) ?: return false
+        if (piece.color != currentState.sideToMove) return false
+
+        // 2) 走法必须合法（过滤掉吃自己/送将等）
+        if (!isValidMove(currentState.board, move)) return false
+
+        executeMove(move)
+
+        // autoPlay 模式下：让电脑走另一方
+        if (autoPlay && !_gameState.value.gameOver) {
+            scope.launch { makeAutoMove() }
         }
+        return true
     }
 
     private fun executeMove(move: Move) {
@@ -114,8 +130,10 @@ class GameManager(
 
         engineManager.setPosition(fen, uciHistory)
 
-        if (bookEnabled && book.isLoaded()) {
-            val bookMove = book.findBestMove(fen)
+        // 每次都从 BookManager 取最新的 activeBook（处理异步注册问题）
+        val currentBook = bookProvider.activeBook ?: getFallbackBook()
+        if (bookEnabled && currentBook.isLoaded()) {
+            val bookMove = currentBook.findBestMove(fen)
             if (bookMove != null) {
                 val move = Move.fromUci(bookMove)
                 if (move != null && isValidMove(state.board, move)) {
@@ -138,6 +156,21 @@ class GameManager(
         } catch (e: Exception) {
             Log.e(TAG, "Search failed", e)
             _statusMessage.value = "引擎搜索失败: ${e.message}"
+        }
+    }
+
+    /**
+     * 兜底开局库：永远有内容（BuiltInBook），不会因为 BookManager 没注册而返回空。
+     */
+    private fun getFallbackBook(): com.qindachess.book.IOpeningBook {
+        return object : com.qindachess.book.IOpeningBook {
+            private val book = com.qindachess.book.UcciTextBook().apply {
+                appendEntries(com.qindachess.book.BuiltInBook.getEntries())
+            }
+            override fun isLoaded(): Boolean = book.isLoaded()
+            override fun entryCount(): Int = book.entryCount()
+            override fun findMovesForPosition(fen: String) = book.findMovesForPosition(fen)
+            override fun findBestMove(fen: String) = book.findBestMove(fen)
         }
     }
 

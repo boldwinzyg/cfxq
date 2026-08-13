@@ -91,6 +91,22 @@ class UcciTextBook : IOpeningBook {
         }
     }
 
+    /**
+     * 把一段"开局母串"在开局局面下展开。
+     * 母串格式：fen|move1|weight1|score1|comment1
+     *          fen|move2|weight2|score2|comment2
+     */
+    fun appendEntries(entries: List<TextEntry>) {
+        for (e in entries) {
+            if (e.fen != null) {
+                byFen.getOrPut(normalizeFen(e.fen)) { mutableListOf() }.add(e)
+            } else {
+                globalEntries.add(e)
+            }
+        }
+        isLoaded = byFen.isNotEmpty() || globalEntries.isNotEmpty()
+    }
+
     private fun parseLine(line: String): TextEntry? {
         // 格式 1: fen|move|weight|score|comment
         if ('|' in line) {

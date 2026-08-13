@@ -41,17 +41,29 @@ class ResourceManager(private val context: Context) {
         try {
             val assetManager = context.assets
 
+            // 引擎 / NNUE / 开局库的"最低有效大小"，低于此值视为占位符或损坏，不予部署
+            val minEngineSize = 10 * 1024L        // 10 KB
+            val minNnueSize   = 100 * 1024L       // 100 KB
+            val minBookSize   = 1 * 1024L         //  1 KB （48 字节的占位符会被拒绝）
+
             val engineFiles = assetManager.list("engines") ?: emptyArray()
             Log.i(TAG, "Found engine assets: ${engineFiles.toList()}")
-            val engineFile = engineFiles.firstOrNull { it.endsWith(".so") || it.endsWith("pikafish") || it.endsWith("yukfish") }
+            val engineFile = engineFiles.firstOrNull {
+                it.endsWith(".so") || it.endsWith("pikafish") || it.endsWith("yukfish")
+            }
             if (engineFile != null) {
-                val dest = File(targetDir, engineFile)
-                assetManager.open("engines/$engineFile").use { input ->
-                    dest.outputStream().use { output -> input.copyTo(output) }
+                val assetSize = try { assetManager.openFd("engines/$engineFile").use { it.length } } catch (_: Exception) { 0L }
+                if (assetSize < minEngineSize) {
+                    Log.w(TAG, "Engine asset too small (${assetSize}B), skip: $engineFile")
+                } else {
+                    val dest = File(targetDir, engineFile)
+                    assetManager.open("engines/$engineFile").use { input ->
+                        dest.outputStream().use { output -> input.copyTo(output) }
+                    }
+                    dest.setExecutable(true, false)
+                    enginePath = dest.absolutePath
+                    Log.i(TAG, "Engine deployed to: $enginePath (${dest.length()}B)")
                 }
-                dest.setExecutable(true, false)
-                enginePath = dest.absolutePath
-                Log.i(TAG, "Engine deployed to: $enginePath")
             }
 
             val abi = android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: ""
@@ -59,35 +71,50 @@ class ResourceManager(private val context: Context) {
             val abiFiles = try { assetManager.list(abiPath) } catch (_: Exception) { null }
             if (abiFiles != null && abiFiles.isNotEmpty()) {
                 val engineSo = abiFiles.first()
-                val dest = File(targetDir, engineSo)
-                assetManager.open("$abiPath/$engineSo").use { input ->
-                    dest.outputStream().use { output -> input.copyTo(output) }
+                val assetSize = try { assetManager.openFd("$abiPath/$engineSo").use { it.length } } catch (_: Exception) { 0L }
+                if (assetSize < minEngineSize) {
+                    Log.w(TAG, "ABI-specific engine asset too small (${assetSize}B), skip: $engineSo")
+                } else {
+                    val dest = File(targetDir, engineSo)
+                    assetManager.open("$abiPath/$engineSo").use { input ->
+                        dest.outputStream().use { output -> input.copyTo(output) }
+                    }
+                    dest.setExecutable(true, false)
+                    enginePath = dest.absolutePath
+                    Log.i(TAG, "ABI-specific engine deployed to: $enginePath (${dest.length()}B)")
                 }
-                dest.setExecutable(true, false)
-                enginePath = dest.absolutePath
-                Log.i(TAG, "ABI-specific engine deployed to: $enginePath")
             }
 
             val nnueFiles = assetManager.list("nnue") ?: emptyArray()
             val nnueFile = nnueFiles.firstOrNull { it.endsWith(".nnue") || it.endsWith(".bin") }
             if (nnueFile != null) {
-                val dest = File(nnueDir, nnueFile)
-                assetManager.open("nnue/$nnueFile").use { input ->
-                    dest.outputStream().use { output -> input.copyTo(output) }
+                val assetSize = try { assetManager.openFd("nnue/$nnueFile").use { it.length } } catch (_: Exception) { 0L }
+                if (assetSize < minNnueSize) {
+                    Log.w(TAG, "NNUE asset too small (${assetSize}B), skip: $nnueFile")
+                } else {
+                    val dest = File(nnueDir, nnueFile)
+                    assetManager.open("nnue/$nnueFile").use { input ->
+                        dest.outputStream().use { output -> input.copyTo(output) }
+                    }
+                    nnuePath = dest.absolutePath
+                    Log.i(TAG, "NNUE deployed to: $nnuePath (${dest.length()}B)")
                 }
-                nnuePath = dest.absolutePath
-                Log.i(TAG, "NNUE deployed to: $nnuePath")
             }
 
             val bookFiles = assetManager.list("book") ?: emptyArray()
             val bookFile = bookFiles.firstOrNull { it.endsWith(".bin") }
             if (bookFile != null) {
-                val dest = File(bookDir, bookFile)
-                assetManager.open("book/$bookFile").use { input ->
-                    dest.outputStream().use { output -> input.copyTo(output) }
+                val assetSize = try { assetManager.openFd("book/$bookFile").use { it.length } } catch (_: Exception) { 0L }
+                if (assetSize < minBookSize) {
+                    Log.w(TAG, "Book asset too small (${assetSize}B), skip and use BuiltInBook: $bookFile")
+                } else {
+                    val dest = File(bookDir, bookFile)
+                    assetManager.open("book/$bookFile").use { input ->
+                        dest.outputStream().use { output -> input.copyTo(output) }
+                    }
+                    bookPath = dest.absolutePath
+                    Log.i(TAG, "Book deployed to: $bookPath (${dest.length()}B)")
                 }
-                bookPath = dest.absolutePath
-                Log.i(TAG, "Book deployed to: $bookPath")
             }
 
         } catch (e: Exception) {
