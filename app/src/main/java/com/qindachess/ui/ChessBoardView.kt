@@ -139,7 +139,8 @@ class ChessBoardView @JvmOverloads constructor(
 
         crossPaint.color = Color.parseColor(skin.crossMark)
         crossPaint.style = Paint.Style.STROKE
-        crossPaint.strokeWidth = 2f
+        crossPaint.strokeWidth = 1f
+        crossPaint.alpha = 128
 
         riverPaint.color = Color.parseColor(skin.riverText)
         riverPaint.textAlign = Paint.Align.CENTER
@@ -267,7 +268,7 @@ class ChessBoardView @JvmOverloads constructor(
             6 to 0, 6 to 2, 6 to 4, 6 to 6, 6 to 8,
             7 to 1, 7 to 7, 9 to 1, 9 to 7
         )
-        val markSize = cellSize * 0.15f
+        val markSize = cellSize * 0.06f
         for ((row, col) in marks) {
             val (drawRow, drawCol) = transformPosition(row, col)
             if (!isInBounds(drawRow, drawCol)) continue
