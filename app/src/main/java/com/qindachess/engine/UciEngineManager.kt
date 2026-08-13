@@ -27,6 +27,8 @@ class UciEngineManager {
     private val pendingResponses = mutableListOf<String>()
     private val responseLock = Object()
 
+    private val engineBanner = mutableListOf<String>()
+
     @Volatile var lastError: String? = null
         private set
 
@@ -49,6 +51,7 @@ class UciEngineManager {
             try {
                 stopEngine()
                 lastError = null
+                engineBanner.clear()
 
                 val file = java.io.File(enginePath)
                 if (!file.exists()) {
@@ -73,12 +76,21 @@ class UciEngineManager {
                     return@withContext false
                 }
 
-                inputWriter = BufferedWriter(
-                    OutputStreamWriter(process!!.outputStream, "UTF-8")
-                )
-                outputReader = BufferedReader(
-                    InputStreamReader(process!!.inputStream, "UTF-8")
-                )
+                try {
+                    inputWriter = BufferedWriter(
+                        OutputStreamWriter(process!!.outputStream, "UTF-8")
+                    )
+                    outputReader = BufferedReader(
+                        InputStreamReader(process!!.inputStream, "UTF-8")
+                    )
+                } catch (e: Exception) {
+                    lastError = "创建进程管道失败: ${e.message}"
+                    Log.e(TAG, lastError!!, e)
+                    _engineState.value = EngineState.ERROR
+                    stopEngine()
+                    return@withContext false
+                }
+
                 running = true
                 _engineState.value = EngineState.STARTING
 
@@ -86,25 +98,55 @@ class UciEngineManager {
                 readThread!!.isDaemon = true
                 readThread!!.start()
 
-                // 同时发送 uci 和 ucci（中国象棋引擎大多支持 UCCI 协议）
-                sendCommand("ucci")
+                // 先等一会让引擎输出 banner（不发任何命令）
+                Thread.sleep(300)
+
+                // 先试 UCI（Pikafish 默认 UCI）
                 sendCommand("uci")
-                val uciOk = waitForResponse("uciok", 2000)
-                val ucciOk = if (!uciOk) waitForResponse("ucciok", 3000) else false
+                val uciOk = waitForResponse("uciok", 5000)
+
+                val ucciOk = if (!uciOk) {
+                    // 引擎可能是 UCCI，重启走 UCCI 握手
+                    Log.i(TAG, "uci 无响应，重启尝试 ucci 协议")
+                    stopEngineQuiet()
+                    Thread.sleep(200)
+                    engineBanner.clear()
+                    process = tryStartProcess(enginePath)
+                    if (process != null) {
+                        inputWriter = BufferedWriter(OutputStreamWriter(process!!.outputStream, "UTF-8"))
+                        outputReader = BufferedReader(InputStreamReader(process!!.inputStream, "UTF-8"))
+                        running = true
+                        readThread = Thread { readLoop() }
+                        readThread!!.isDaemon = true
+                        readThread!!.start()
+                        Thread.sleep(300)
+                        sendCommand("ucci")
+                        waitForResponse("ucciok", 5000)
+                    } else false
+                } else false
+
                 if (!uciOk && !ucciOk) {
-                    val existingOutput: List<String> = synchronized(responseLock) {
-                        pendingResponses.toList()
+                    synchronized(responseLock) {
+                        pendingResponses.clear()
                     }
-                    lastError = "引擎无响应 uciok/ucciok（文件可能不是合法象棋引擎）\n" +
-                        "已收到输出(${existingOutput.size}行): ${existingOutput.take(5).joinToString(" | ")}\n" +
-                        "进程是否存活: ${process?.isAlive}\n" +
-                        "running flag: $running"
+                    lastError = "引擎启动了但不响应 uciok/ucciok\n" +
+                        "进程存活: ${process?.isAlive}\n" +
+                        "引擎启动后共输出 ${engineBanner.size} 行:\n" +
+                        engineBanner.take(20).joinToString("\n") { "  | $it" } +
+                        if (engineBanner.size > 20) "\n  ... (共 ${engineBanner.size} 行)" else "" +
+                        "\n\n💡 可能原因:\n" +
+                        "  1) 引擎需要 su/shell 方式执行才能正常握手\n" +
+                        "  2) 引擎文件损坏或不是象棋引擎\n" +
+                        "  3) 引擎是特殊协议（非 UCI/UCCI）"
                     Log.e(TAG, lastError!!)
                     _engineState.value = EngineState.ERROR
+                    stopEngineQuiet()
                     return@withContext false
                 }
-                Log.i(TAG, "引擎协议握手成功 (uciok=$uciOk, ucciok=$ucciOk)")
+                val protocol = if (uciOk) "UCI" else "UCCI"
+                Log.i(TAG, "✅ 引擎协议握手成功 [$protocol]")
 
+                // 应用引擎参数
                 sendCommand("setoption name Threads value ${SearchOptions().threads}")
                 sendCommand("setoption name Hash value ${SearchOptions().hashSize}")
                 sendCommand("setoption name MultiPV value ${SearchOptions().multiPv}")
@@ -118,9 +160,11 @@ class UciEngineManager {
 
                 sendCommand("isready")
                 if (!waitForResponse("readyok", 5000)) {
-                    lastError = "引擎加载选项后无响应 readyok"
+                    lastError = "引擎加载选项后无响应 readyok\n" +
+                        "引擎输出:\n" + engineBanner.take(30).joinToString("\n") { "  | $it" }
                     Log.e(TAG, lastError!!)
                     _engineState.value = EngineState.ERROR
+                    stopEngineQuiet()
                     return@withContext false
                 }
 
@@ -131,85 +175,81 @@ class UciEngineManager {
                     lastError = "新游戏初始化后无响应 readyok"
                     Log.e(TAG, lastError!!)
                     _engineState.value = EngineState.ERROR
+                    stopEngineQuiet()
                     return@withContext false
                 }
 
                 _engineState.value = EngineState.READY
-                Log.i(TAG, "Engine loaded successfully from $enginePath")
+                Log.i(TAG, "🎉 引擎加载成功 [$protocol]")
                 true
             } catch (e: Exception) {
                 lastError = "意外异常: ${e.javaClass.simpleName} - ${e.message}"
                 Log.e(TAG, lastError!!, e)
                 _engineState.value = EngineState.ERROR
-                stopEngine()
+                stopEngineQuiet()
                 false
             }
         }
 
     private fun tryStartProcess(enginePath: String): Process? {
         val file = java.io.File(enginePath)
-        val attempts = mutableListOf<Pair<String, () -> Process?>>()
 
-        // 1) 直接路径
-        attempts.add("直接执行" to {
-            try {
-                ProcessBuilder(enginePath).redirectErrorStream(true).start()
-            } catch (e: Exception) {
-                Log.d(TAG, "直接执行失败: ${e.message}")
-                null
-            }
-        })
+        val attempts = mutableListOf<Triple<String, Array<String>, Boolean>>()
 
-        // 2) 通过 sh -c 执行（绕过路径中特殊字符）
-        attempts.add("sh -c 执行" to {
-            try {
-                ProcessBuilder("/system/bin/sh", "-c", "\"$enginePath\"").redirectErrorStream(true).start()
-            } catch (e: Exception) {
-                Log.d(TAG, "sh -c 执行失败: ${e.message}")
-                null
-            }
-        })
+        // 1) 直接 ProcessBuilder
+        attempts.add(Triple("直接执行", arrayOf(enginePath), true))
 
-        // 3) Root 设备用 su 执行（绕过 SELinux）
+        // 2) sh -c 包路径
+        attempts.add(Triple("sh -c 执行", arrayOf("/system/bin/sh", "-c", "\"$enginePath\""), true))
+
+        // 3) run-as（非 Root 也能用，但只能访问本包目录）
+        attempts.add(Triple("run-as 执行", arrayOf("run-as", "com.qindachess", enginePath), true))
+
+        // 4) su -c（Root 设备）
         if (java.io.File("/system/bin/su").exists() || java.io.File("/system/xbin/su").exists()) {
-            attempts.add("su -c 执行" to {
-                try {
-                    ProcessBuilder("su", "-c", "\"$enginePath\"").redirectErrorStream(true).start()
-                } catch (e: Exception) {
-                    Log.d(TAG, "su -c 执行失败: ${e.message}")
-                    null
-                }
-            })
+            attempts.add(Triple("su -c 执行", arrayOf("su", "-c", "\"$enginePath\""), true))
+            // su -c 里用 sh -c 再包一层（某些 root 管理器处理引号不一样）
+            attempts.add(Triple("su sh -c 执行", arrayOf("su", "-c", "sh -c \"$enginePath\""), true))
         }
 
-        // 4) Termux 兼容：如果 Termux 存在，尝试用它的 bin 目录
+        // 5) Termux 兼容
         val termuxBin = java.io.File("/data/data/com.termux/files/usr/bin")
         if (termuxBin.exists()) {
-            attempts.add("Termux 环境执行" to {
-                try {
-                    // 先把引擎拷贝到 Termux 可执行目录
+            attempts.add(Triple("Termux 执行", arrayOf(termuxBin.resolve("qinda_engine").absolutePath), false))
+        }
+
+        for ((label, cmd, copyIfNeeded) in attempts) {
+            Log.i(TAG, "🪄 尝试 [$label]: ${cmd.joinToString(" ")}")
+            try {
+                val builder = ProcessBuilder(*cmd)
+                    .redirectErrorStream(true)
+                    .directory(file.parentFile)
+
+                // Termux 路径需要先拷贝
+                if (label == "Termux 执行" && copyIfNeeded) {
                     val dest = java.io.File(termuxBin, "qinda_engine")
                     file.copyTo(dest, overwrite = true)
                     dest.setExecutable(true, false)
-                    ProcessBuilder(dest.absolutePath).redirectErrorStream(true).start()
-                } catch (e: Exception) {
-                    Log.d(TAG, "Termux 执行失败: ${e.message}")
-                    null
                 }
-            })
-        }
 
-        for ((label, block) in attempts) {
-            Log.i(TAG, "尝试 [$label] 启动引擎: $enginePath")
-            val p = block()
-            if (p != null && p.isAlive) {
-                Log.i(TAG, "✅ 引擎启动成功 via [$label]")
-                running = true
-                return p
+                val p = builder.start()
+                // 给进程一点启动时间再判断
+                Thread.sleep(200)
+                if (p.isAlive) {
+                    Log.i(TAG, "✅ 进程启动成功 via [$label], PID 存活")
+                    running = true
+                    return p
+                } else {
+                    val exit = try { p.exitValue() } catch (_: Exception) { -1 }
+                    Log.w(TAG, "进程启动后立即退出，exitCode=$exit")
+                    p.destroy()
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "[$label] 异常: ${e.message}")
             }
-            p?.destroy()
         }
 
+        Log.e(TAG, "❌ 所有启动策略均失败")
         return null
     }
 
@@ -219,24 +259,20 @@ class UciEngineManager {
         reasons.add("大小: ${file.length()}B")
         reasons.add("canExecute: ${file.canExecute()}")
         reasons.add("canRead: ${file.canRead()}")
-        reasons.add("isFile: ${file.isFile}")
-        reasons.add("parent exists: ${file.parentFile?.exists()}")
-        reasons.add("isSymlink: ${file.canonicalPath != file.absolutePath}")
 
-        // 检查是否有 root
         val hasSu = java.io.File("/system/bin/su").exists() || java.io.File("/system/xbin/su").exists()
         val hasTermux = java.io.File("/data/data/com.termux").exists()
 
         val tip = when {
-            hasSu -> "检测到设备有 root，已尝试 su -c 方式仍失败。可能引擎不是 ARM64 架构，或文件损坏。"
-            hasTermux -> "检测到 Termux，已尝试拷贝到 Termux bin 目录执行仍失败。"
-            else -> "Android SELinux 限制：普通应用无法直接执行数据目录下的 ELF 二进制文件。\n" +
+            hasSu -> "检测到设备有 root，已尝试 su/run-as 方式仍失败。可能引擎文件损坏或架构不匹配。"
+            hasTermux -> "检测到 Termux，已尝试拷贝执行仍失败。"
+            else -> "Android SELinux 限制：无法执行数据目录下的 ELF\n" +
                 "解决方案:\n" +
-                "  1) 使用 Root 设备，本应用会自动用 su 执行\n" +
-                "  2) 安装 Termux，把引擎放到 /data/data/com.termux/files/usr/bin/\n" +
-                "  3) 确认引擎文件是 ARM64 (aarch64) 架构的二进制"
+                "  1) Root 设备会自动用 su/run-as 执行\n" +
+                "  2) 安装 Termux 后再导入引擎\n" +
+                "  3) 确认引擎是 ARM64 (aarch64) 架构"
         }
-        return "启动引擎失败（尝试了多种方式均被拒绝）\n${reasons.joinToString("\n")}\n\n💡 $tip"
+        return "启动引擎失败（所有策略均被拒绝）\n${reasons.joinToString("\n")}\n\n💡 $tip"
     }
 
     private fun readLoop() {
@@ -246,7 +282,14 @@ class UciEngineManager {
                 if (line != null) {
                     synchronized(responseLock) {
                         pendingResponses.add(line)
+                        engineBanner.add(line)
                         responseLock.notifyAll()
+                    }
+                    if (engineBanner.size <= 5 || line.startsWith("info") || line.startsWith("bestmove") ||
+                        line.startsWith("id") || line.startsWith("option") || line.startsWith("uciok") ||
+                        line.startsWith("ucciok") || line.startsWith("readyok") || line.startsWith("Copyright") ||
+                        line.contains("pikafish", ignoreCase = true) || line.contains("engine", ignoreCase = true)) {
+                        Log.i(TAG, "⚙️ 引擎输出: $line")
                     }
                     handleEngineOutput(line)
                 } else {
@@ -265,8 +308,6 @@ class UciEngineManager {
             line.startsWith("info") -> parseInfoLine(line)
             line.startsWith("bestmove") -> {
                 if (_analyzingMode.value) {
-                    // 持续分析时收到 bestmove（引擎自己结束了？）
-                    // 不停止，重发 go 继续挖
                     sendCommand("go depth 30")
                 } else {
                     _engineState.value = EngineState.IDLE
@@ -277,7 +318,6 @@ class UciEngineManager {
 
     private fun parseInfoLine(line: String) {
         val info = SearchInfo()
-        var i = 5
         val tokens = line.substring(5).split("\\s+".toRegex())
 
         var currentDepth = 0
@@ -306,28 +346,17 @@ class UciEngineManager {
                 token == "multipv" && j + 1 < tokens.size -> {
                     currentMultiPv = tokens[++j].toIntOrNull() ?: 1
                 }
-                token == "pv" -> {
-                    inPv = true
-                }
-                inPv -> {
-                    currentPv.add(token)
-                }
-                token == "nodes" && j + 1 < tokens.size -> {
-                    info.nodes = tokens[++j].toLongOrNull() ?: 0
-                }
-                token == "time" && j + 1 < tokens.size -> {
-                    info.timeMs = tokens[++j].toLongOrNull() ?: 0
-                }
-                token == "nps" && j + 1 < tokens.size -> {
-                    info.nps = tokens[++j].toLongOrNull() ?: 0
-                }
+                token == "pv" -> inPv = true
+                inPv -> currentPv.add(token)
+                token == "nodes" && j + 1 < tokens.size -> info.nodes = tokens[++j].toLongOrNull() ?: 0
+                token == "time" && j + 1 < tokens.size -> info.timeMs = tokens[++j].toLongOrNull() ?: 0
+                token == "nps" && j + 1 < tokens.size -> info.nps = tokens[++j].toLongOrNull() ?: 0
             }
             j++
         }
 
         info.scoreCp = currentScore
         info.mate = currentMate
-
         _searchInfo.value = info
 
         val pv = currentPv.firstOrNull()
@@ -393,9 +422,7 @@ class UciEngineManager {
                         responseLock.wait(100)
                         while (pendingResponses.isNotEmpty()) {
                             val line = pendingResponses.removeAt(0)
-                            if (line.matches(infoPattern)) {
-                                allInfo.add(line)
-                            }
+                            if (line.matches(infoPattern)) allInfo.add(line)
                             val match = bestMovePattern.find(line)
                             if (match != null) {
                                 val result = SearchResult(
@@ -423,9 +450,7 @@ class UciEngineManager {
         if (options.timeMs > 0) {
             val wtime = options.timeMs
             val btime = options.timeMs
-            val winc = 0
-            val binc = 0
-            sb.append(" wtime $wtime btime $btime winc $winc binc $binc")
+            sb.append(" wtime $wtime btime $btime winc 0 binc 0")
             if (options.movestogo > 0) sb.append(" movestogo ${options.movestogo}")
         }
         return sb.toString()
@@ -436,70 +461,50 @@ class UciEngineManager {
         _engineState.value = if (_analyzingMode.value) EngineState.READY else EngineState.IDLE
     }
 
-    /** 启动持续分析（引擎一直跑，multiPvResults 实时更新） */
     fun startContinuousAnalyze(options: SearchOptions, fen: String, moves: List<String>) {
-        if (_engineState.value != EngineState.READY && _engineState.value != EngineState.IDLE) {
-            Log.w(TAG, "引擎没准备好，不能启动持续分析 (state=${_engineState.value})")
-            return
-        }
+        if (_engineState.value != EngineState.READY && _engineState.value != EngineState.IDLE) return
         sendCommand("setoption name MultiPV value ${options.multiPv.coerceAtLeast(3)}")
         _analyzingMode.value = true
         _engineState.value = EngineState.SEARCHING
         pvMap.clear()
         setPosition(fen, moves)
-        val depth = options.depth.coerceIn(10, 40)
-        sendCommand("go depth $depth")
-        Log.i(TAG, "✅ 持续分析已启动 depth=$depth multiPv=${options.multiPv}")
+        sendCommand("go depth ${options.depth.coerceIn(10, 40)}")
     }
 
-    /** 停止持续分析 */
     fun stopContinuousAnalyze() {
         if (!_analyzingMode.value) return
         _analyzingMode.value = false
         sendCommand("stop")
         _engineState.value = EngineState.READY
-        Log.i(TAG, "⏹ 持续分析已停止")
     }
 
-    /** 棋盘变化后，停止旧搜索 → 更新 position → 重新 go */
     fun updatePositionAndRestart(fen: String, moves: List<String>) {
         if (!_analyzingMode.value) return
         sendCommand("stop")
         pvMap.clear()
         setPosition(fen, moves)
         sendCommand("go depth 30")
-        Log.d(TAG, "持续分析：棋盘已更新，重新搜索")
     }
 
     fun ponderHit() {
         sendCommand("ponderhit")
     }
 
-    fun stopEngine() {
+    private fun stopEngineQuiet() {
         running = false
         _analyzingMode.value = false
-        try {
-            readThread?.interrupt()
-            readThread?.join(500)
-        } catch (_: InterruptedException) {}
+        try { readThread?.interrupt(); readThread?.join(500) } catch (_: InterruptedException) {}
         readThread = null
-
-        try {
-            inputWriter?.write("quit\n")
-            inputWriter?.flush()
-        } catch (_: Exception) {}
-
-        try {
-            process?.waitFor(2, TimeUnit.SECONDS)
-        } catch (_: Exception) {}
-
-        try {
-            process?.destroyForcibly()
-        } catch (_: Exception) {}
-
+        try { inputWriter?.write("quit\n"); inputWriter?.flush() } catch (_: Exception) {}
+        try { process?.waitFor(2, TimeUnit.SECONDS) } catch (_: Exception) {}
+        try { process?.destroyForcibly() } catch (_: Exception) {}
         process = null
         inputWriter = null
         outputReader = null
+    }
+
+    fun stopEngine() {
+        stopEngineQuiet()
         _engineState.value = EngineState.IDLE
         pvMap.clear()
     }
